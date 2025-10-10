@@ -2,4 +2,4 @@
 "videostil": patch
 ---
 
-Add Vitest testing infrastructure with GitHub Actions CI
+chore: add Vitest testing infrastructure with GitHub Actions CI
