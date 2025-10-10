@@ -4,6 +4,9 @@
   "description": "Convert videos into LLM-friendly input by extracting and deduplicating frames",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "videostil": "./dist/cli.js"
   },
