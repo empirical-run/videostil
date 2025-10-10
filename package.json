@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "videostil": "./dist/cli.js"
+    "videostil": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc && cp src/server/viewer.html dist/server/",
