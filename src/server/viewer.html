@@ -787,12 +787,7 @@
 
       <!-- Column 2: Frames -->
       <div class="column">
-        <div class="column-header">Total Unique Frames</div>
-        <div id="framesHeaderInfo" class="frames-header-info">
-          Count: <span id="frameCount">0</span>(max is 100) | Total Size: <span id="totalSize"
-            >0</span
-          >(max is 32MB)
-        </div>
+        <div class="column-header">Total Unique Frames: <span id="frameCount">0</span> | Size: <span id="totalSize">0</span> | Max 100 frames or 32 MB of payload is allowed whichever is smaller (LLM LIMIT)</div>
 
         <!-- Graph Section -->
         <div id="graphsSection" class="graphs-section">
@@ -958,36 +953,11 @@
     <script>
         let currentData = null;
 
-        // LocalStorage keys
-        const STORAGE_KEYS = {
-            VIDEO_URL: 'video-analysis-url',
-            ANALYSIS_PARAMS: 'video-analysis-params'
-        };
-
-        // Load saved values from localStorage
-        function loadSavedValues() {
-            const savedUrl = localStorage.getItem(STORAGE_KEYS.VIDEO_URL);
-            const savedParams = localStorage.getItem(STORAGE_KEYS.ANALYSIS_PARAMS);
-
-            if (savedUrl) {
-                document.getElementById('videoUrl').value = savedUrl;
-                document.getElementById('analysisUrl').value = savedUrl;
-            }
-
-            if (savedParams) {
-                const params = new URLSearchParams(savedParams);
-                const fps = params.get('fps');
-                const threshold = params.get('threshold');
-                if (fps) document.getElementById('fpsInput').value = fps;
-                if (threshold) document.getElementById('thresholdInput').value = threshold;
-            }
-        }
-
-        // Save values to localStorage
-        function saveValues(url, params) {
-            if (url) localStorage.setItem(STORAGE_KEYS.VIDEO_URL, url);
-            if (params) localStorage.setItem(STORAGE_KEYS.ANALYSIS_PARAMS, params);
-        }
+        // LocalStorage keys - REMOVED: Form controls no longer exist
+        // const STORAGE_KEYS = {
+        //     VIDEO_URL: 'video-analysis-url',
+        //     ANALYSIS_PARAMS: 'video-analysis-params'
+        // };
 
         function showStatus(message, type = 'loading') {
             const statusSection = document.getElementById('statusSection');
@@ -1339,83 +1309,9 @@
             document.getElementById('videoInfo').textContent = JSON.stringify(videoInfo, null, 2);
         }
 
-        async function runAnalysis() {
-            const videoUrl = document.getElementById('analysisUrl').value.trim();
-            const fps = document.getElementById('fpsInput').value.trim();
-            const threshold = document.getElementById('thresholdInput').value.trim();
-
-            if (!videoUrl) {
-                showStatus('Please enter a video URL', 'error');
-                return;
-            }
-
-            const params = `fps=${fps};threshold=${threshold}`;
-            saveValues(videoUrl, params);
-
-            showStatus('Running video analysis...', 'loading');
-
-            try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        url: videoUrl,
-                        params: params
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                displayData(data);
-                showStatus('Analysis completed successfully', 'success');
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-            }
-        }
-
-        function loadFromFile() {
-            document.getElementById('fileInput').click();
-        }
-
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            showStatus('Loading JSON file...', 'loading');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    displayData(data);
-                    showStatus('JSON file loaded successfully', 'success');
-                } catch (error) {
-                    showStatus(`Error parsing JSON: ${error.message}`, 'error');
-                }
-            };
-            reader.readAsText(file);
-        });
-
-        // Event listeners
-        document.getElementById('runAnalysisButton').addEventListener('click', runAnalysis);
-        document.getElementById('loadJsonButton').addEventListener('click', loadFromFile);
-
-        // Allow Enter key to trigger analysis
-        document.getElementById('analysisUrl').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') runAnalysis();
-        });
-
-        document.getElementById('fpsInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') runAnalysis();
-        });
-
-        document.getElementById('thresholdInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') runAnalysis();
-        });
+        // REMOVED: Analysis form and file upload controls no longer exist in HTML
+        // async function runAnalysis() { ... }
+        // function loadFromFile() { ... }
 
         let currentModalIndex = 0;
         let modalFrames = [];
@@ -1568,12 +1464,7 @@
             }
         });
 
-        // Initialize page
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadSavedValues);
-        } else {
-            loadSavedValues();
-        }
+        // Initialize page - REMOVED: loadSavedValues no longer needed
 
         // ========== GRAPH FUNCTIONALITY ==========
 
