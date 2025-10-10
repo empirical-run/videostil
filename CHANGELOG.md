@@ -1,5 +1,11 @@
 # videostil
 
+## 0.1.2
+
+### Patch Changes
+
+- 4b2f585: chore: publish config access set to public
+
 ## 0.1.1
 
 ### Patch Changes
