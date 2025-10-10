@@ -14,7 +14,10 @@
     "prepare": "npm run build",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "keywords": [
     "video",
@@ -44,6 +47,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.29.7",
     "@types/node": "^20.0.0",
     "@types/pixelmatch": "^5.2.6",
     "nodemon": "^3.1.10",
