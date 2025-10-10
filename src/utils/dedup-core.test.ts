@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { FrameInfo } from "../types/index.js";
 import { deduplicateFrames } from "./dedup-core";
@@ -25,16 +26,22 @@ describe("dedup-core", () => {
   ): Promise<string> {
     const imagePath = path.join(testDir, filename);
 
-    // Base64 encoded 1x1 pixel PNGs of different colors
     const colors = {
-      red: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-      blue: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGA3TyLVQAAAABJRU5ErkJggg==",
-      green:
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      red: { r: 255, g: 0, b: 0, alpha: 1 },
+      blue: { r: 0, g: 0, b: 255, alpha: 1 },
+      green: { r: 0, g: 255, b: 0, alpha: 1 },
     };
 
-    const buffer = Buffer.from(colors[color], "base64");
-    await fs.promises.writeFile(imagePath, buffer);
+    await sharp({
+      create: {
+        width: 10,
+        height: 10,
+        channels: 4,
+        background: colors[color],
+      },
+    })
+      .png()
+      .toFile(imagePath);
 
     return imagePath;
   }

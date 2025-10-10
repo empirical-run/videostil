@@ -1,36 +1,53 @@
-import * as fs from "fs";
-import path from "path";
 import { describe, expect, it } from "vitest";
+import sharp from "sharp";
 import { areImagesDuplicate, compareImageBuffers } from "./image-comparison";
 
 describe("image-comparison", () => {
   describe("compareImageBuffers", () => {
     it("should compare two identical images and return zero difference", async () => {
-      // Create a simple test image buffer (1x1 red pixel PNG)
-      const testImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      // Create a 10x10 red pixel PNG
+      const testImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await compareImageBuffers(testImage, testImage, 0.1);
 
       expect(result.diffPixels).toBe(0);
-      expect(result.totalPixels).toBe(1);
+      expect(result.totalPixels).toBe(100);
       expect(result.diffFraction).toBe(0);
     });
 
     it("should throw error when comparing images of different dimensions", async () => {
-      // 1x1 image
-      const smallImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      // 10x10 image
+      const smallImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
-      // 2x2 image
-      const largerImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mP8/5+hHjgAMRgA5vAJ/bQYhgAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      // 20x20 image
+      const largerImage = await sharp({
+        create: {
+          width: 20,
+          height: 20,
+          channels: 4,
+          background: { r: 0, g: 0, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       await expect(
         compareImageBuffers(smallImage, largerImage, 0.1),
@@ -38,17 +55,29 @@ describe("image-comparison", () => {
     });
 
     it("should detect differences between different images", async () => {
-      // Red pixel
-      const redImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      // Red image
+      const redImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
-      // Blue pixel
-      const blueImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGA3TyLVQAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      // Blue image
+      const blueImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 0, g: 0, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await compareImageBuffers(redImage, blueImage, 0.1);
 
@@ -59,10 +88,16 @@ describe("image-comparison", () => {
 
   describe("areImagesDuplicate", () => {
     it("should return true for identical images", async () => {
-      const testImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const testImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await areImagesDuplicate(testImage, testImage, 0.001);
 
@@ -70,15 +105,27 @@ describe("image-comparison", () => {
     });
 
     it("should return false for very different images with low threshold", async () => {
-      const redImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const redImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
-      const blueImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGA3TyLVQAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const blueImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 0, g: 0, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await areImagesDuplicate(redImage, blueImage, 0.001);
 
@@ -86,15 +133,27 @@ describe("image-comparison", () => {
     });
 
     it("should return true for similar images with high threshold", async () => {
-      const redImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const redImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
-      const blueImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAGA3TyLVQAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const blueImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 0, g: 0, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await areImagesDuplicate(redImage, blueImage, 1.0);
 
@@ -102,15 +161,27 @@ describe("image-comparison", () => {
     });
 
     it("should return false when image comparison throws an error (dimension mismatch)", async () => {
-      const smallImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const smallImage = await sharp({
+        create: {
+          width: 10,
+          height: 10,
+          channels: 4,
+          background: { r: 255, g: 0, b: 0, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
-      const largerImage = Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR42mP8/5+hHjgAMRgA5vAJ/bQYhgAAAABJRU5ErkJggg==",
-        "base64",
-      );
+      const largerImage = await sharp({
+        create: {
+          width: 20,
+          height: 20,
+          channels: 4,
+          background: { r: 0, g: 0, b: 255, alpha: 1 },
+        },
+      })
+        .png()
+        .toBuffer();
 
       const result = await areImagesDuplicate(smallImage, largerImage, 0.001);
 
