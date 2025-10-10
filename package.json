@@ -1,7 +1,7 @@
 {
   "name": "videostil",
   "version": "0.1.0",
-  "description": "Convert videos into LLM-friendly formats by extracting and deduplicating frames",
+  "description": "Convert videos into LLM-friendly input by extracting and deduplicating frames",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "tsc && cp src/server/viewer.html dist/server/",
-    "dev": "tsc --watch",
+    "dev": "nodemon",
+    "dev:ts": "tsc --watch",
     "prepare": "npm run build",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
@@ -37,16 +38,20 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "open": "^10.0.0",
     "pixelmatch": "^6.0.0",
-    "sharp": "^0.33.0",
-    "open": "^10.0.0"
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^20.0.0",
     "@types/pixelmatch": "^5.2.6",
+    "nodemon": "^3.1.10",
     "typescript": "^5.3.0"
   },
-  "peerDependencies": {},
-  "files": ["dist", "README.md", "LICENSE"]
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }
