@@ -1,136 +1,52 @@
 #!/usr/bin/env node
 
-import { extractUniqueFrames, serve } from "./index.js";
+import { Command } from "commander";
+import { extractUniqueFrames, serve } from ".";
 
-const args = process.argv.slice(2);
+const pkg = require("../package.json");
 
-if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-  console.log(`
-videostil - Extract and deduplicate video frames for LLMs
+const program = new Command();
 
-Usage:
-  videostil <video-url> [options]
-  videostil serve [options]
-
-Commands:
-  <video-url>           Extract frames from video (default command)
-  serve                 Start analysis viewer (browses all analyses from ~/.videostil/)
-
-Extraction Options:
-  --fps <number>        Frames per second (default: 30)
-  --threshold <number>  Deduplication threshold (default: 0.001)
-  --algo <string>       Algorithm: gd|dp|sw (default: gd)
-  --start <seconds>     Start time in video
-  --duration <seconds>  Duration to extract
-  --output <dir>        Output directory
-  --no-serve           Don't start viewer after extraction
-
-Server Options:
-  --port <number>       Server port (default: 63745)
-  --host <string>       Server host (default: 127.0.0.1)
-  --no-open            Don't open browser automatically
-
-Global Options:
-  --help, -h           Show this help
-  --version, -v        Show version
-
-Examples:
-  videostil https://example.com/video.mp4
-  videostil video.mp4 --fps 20 --threshold 0.01 --algo dp
-  videostil video.mp4 --start 30 --duration 60 --no-serve
-  videostil serve
-  videostil serve --port 8080 --no-open
-
+program
+  .name("videostil")
+  .description("Extract and deduplicate video frames for LLMs")
+  .version(pkg.version, "-v, --version", "Show version")
+  .addHelpText(
+    "after",
+    `
 Requirements:
   ffmpeg and ffprobe must be installed on your system
-  `);
-  process.exit(0);
-}
+  `,
+  );
 
-if (args.includes("--version") || args.includes("-v")) {
-  const pkg = require("../package.json");
-  console.log(`videostil v${pkg.version}`);
-  process.exit(0);
-}
+// Default extract command
+program
+  .argument("<video-url>", "Video URL or path to extract frames from")
+  .option("--fps <number>", "Frames per second", "30")
+  .option("--threshold <number>", "Deduplication threshold", "0.001")
+  .option("--algo <string>", "Algorithm: gd|dp|sw", "gd")
+  .option("--start <seconds>", "Start time in video")
+  .option("--duration <seconds>", "Duration to extract")
+  .option("--output <dir>", "Output directory")
+  .option("--no-serve", "Don't start viewer after extraction")
+  .action(async (videoUrl, options) => {
+    try {
+      console.log("Starting videostil...\n");
 
-// Handle serve command
-if (args[0] === "serve") {
-  // Parse serve options
-  const serveOptions: any = {};
-  for (let i = 1; i < args.length; i++) {
-    const arg = args[i];
-    const next = args[i + 1];
+      const extractOptions = {
+        videoUrl,
+        fps: Number.parseInt(options.fps, 10),
+        threshold: Number.parseFloat(options.threshold),
+        algo: options.algo,
+        ...(options.start && { startTime: Number.parseInt(options.start, 10) }),
+        ...(options.duration && {
+          duration: Number.parseInt(options.duration, 10),
+        }),
+        ...(options.output && { workingDir: options.output }),
+      };
 
-    if (arg === "--port" && next) {
-      serveOptions.port = parseInt(next, 10);
-      i++;
-    } else if (arg === "--host" && next) {
-      serveOptions.host = next;
-      i++;
-    } else if (arg === "--no-open") {
-      serveOptions.openBrowser = false;
-    }
-  }
+      const result = await extractUniqueFrames(extractOptions);
 
-  serve(serveOptions)
-    .then((handle) => {
-      console.log("Press Ctrl+C to stop the server\n");
-
-      // Keep process alive
-      process.on("SIGINT", async () => {
-        console.log("\n\nStopping server...");
-        await handle.close();
-        console.log("Server stopped");
-        process.exit(0);
-      });
-    })
-    .catch((error) => {
-      console.error("\n✗ Error:", error.message);
-      process.exit(1);
-    });
-} else {
-  // Handle extract command (default)
-  const videoUrl = args[0];
-  if (!videoUrl) {
-    console.error("Error: Video URL or path is required");
-    process.exit(1);
-  }
-
-  // Parse extract options
-  const options: any = { videoUrl };
-  let shouldServe = true;
-
-  for (let i = 1; i < args.length; i++) {
-    const arg = args[i];
-    const next = args[i + 1];
-
-    if (arg === "--fps" && next) {
-      options.fps = parseInt(next, 10);
-      i++;
-    } else if (arg === "--threshold" && next) {
-      options.threshold = parseFloat(next);
-      i++;
-    } else if (arg === "--algo" && next) {
-      options.algo = next;
-      i++;
-    } else if (arg === "--start" && next) {
-      options.startTime = parseInt(next, 10);
-      i++;
-    } else if (arg === "--duration" && next) {
-      options.duration = parseInt(next, 10);
-      i++;
-    } else if (arg === "--output" && next) {
-      options.workingDir = next;
-      i++;
-    } else if (arg === "--no-serve") {
-      shouldServe = false;
-    }
-  }
-
-  console.log("Starting videostil...\n");
-
-  extractUniqueFrames(options)
-    .then(async (result) => {
       console.log("\n✓ Frame extraction complete!\n");
       console.log(`Total frames extracted: ${result.totalFramesCount}`);
       console.log(
@@ -151,7 +67,7 @@ if (args[0] === "serve") {
       }
 
       // Start server if requested
-      if (shouldServe) {
+      if (options.serve) {
         console.log("\nStarting analysis viewer...");
 
         try {
@@ -167,12 +83,43 @@ if (args[0] === "serve") {
         } catch (error: any) {
           console.error("Could not start server:", error.message);
           console.log("You can manually start the server later with:");
-          console.log(`  videostil serve`);
+          console.log("  videostil serve");
         }
       }
-    })
-    .catch((error) => {
+    } catch (error: any) {
       console.error("\n✗ Error:", error.message);
       process.exit(1);
-    });
-}
+    }
+  });
+
+// Serve command
+program
+  .command("serve")
+  .description("Start analysis viewer (browses all analyses from ~/.videostil/)")
+  .option("--port <number>", "Server port", "63745")
+  .option("--host <string>", "Server host", "127.0.0.1")
+  .option("--no-open", "Don't open browser automatically")
+  .action(async (options) => {
+    try {
+      const serveOptions = {
+        port: Number.parseInt(options.port, 10),
+        host: options.host,
+        openBrowser: options.open,
+      };
+
+      const handle = await serve(serveOptions);
+      console.log("Press Ctrl+C to stop the server\n");
+
+      process.on("SIGINT", async () => {
+        console.log("\n\nStopping server...");
+        await handle.close();
+        console.log("Server stopped");
+        process.exit(0);
+      });
+    } catch (error: any) {
+      console.error("\n✗ Error:", error.message);
+      process.exit(1);
+    }
+  });
+
+program.parse();
