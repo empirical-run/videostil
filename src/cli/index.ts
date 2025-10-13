@@ -21,7 +21,7 @@ Requirements:
   `,
   );
 
-// Default extract command
+
 program
   .argument("<video-url>", "Video URL or path to extract frames from")
   .option("--fps <number>", "Frames per second", "25")
@@ -43,7 +43,6 @@ program
     }
   });
 
-// Serve command
 program
   .command("serve")
   .description(

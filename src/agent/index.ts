@@ -30,7 +30,6 @@ async function getFrameAnalysisFromLLM({
     apiKeys as Record<string, string>,
   );
 
-  // Push user message with initial prompt and frame attachments
   const parts = [
     { text: initialPrompt },
     ...frameBatch.map((attachment) => ({
@@ -41,7 +40,6 @@ async function getFrameAnalysisFromLLM({
 
   chatModel.pushUserPartsMessage(parts);
 
-  // Get LLM response
   const response = await chatModel.getLLMResponse({
     systemPrompt,
     tools: { custom: [] },
@@ -54,7 +52,6 @@ async function getFrameAnalysisFromLLM({
 
   chatModel.pushMessage(response);
 
-  // Extract text from last message
   const allMessages = chatModel.messages as CanonicalMessage[];
   const lastMessage = allMessages[allMessages.length - 1];
 
@@ -102,7 +99,6 @@ export async function analyseFrames({
   initialUserPrompt?: string;
   apiKeys?: ApiKeysConfig;
 }): Promise<AnalyseFramesResult> {
-  // Ensure API keys are available, will throw if not found
   requireApiKeys(apiKeys);
 
   const { analysis: rawAnalysis, allMessages } = await getFrameAnalysisFromLLM({

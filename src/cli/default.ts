@@ -44,7 +44,6 @@ export async function defaultCommand(
     console.log(`  ... and ${result.uniqueFrames.length - 5} more frames`);
   }
 
-  // Check for API keys and run analysis if available
   const { hasKeys } = checkApiKeys();
   if (hasKeys) {
     console.log("\n🤖 Analyzing frames with LLM...\n");
@@ -74,9 +73,7 @@ export async function defaultCommand(
 
       console.log(analysisResult.analysis);
 
-      // Update analysis-result.json with LLM analysis data
       try {
-        // Read existing analysis-result.json
         const analysisFilePath = path.join(
           result.uniqueFramesDir,
           "..",
@@ -155,7 +152,6 @@ export async function defaultCommand(
     );
   }
 
-  // Start server if requested
   if (options.serve) {
     console.log("\nStarting analysis viewer...");
 

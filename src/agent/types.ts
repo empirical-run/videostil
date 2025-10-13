@@ -1,6 +1,3 @@
-// Types copied from @empiricalrun/shared-types for compatibility
-// (Cannot add as dependency due to proprietary code)
-
 export type SupportedChatModels =
 	| "gemini-2.5-pro"
 	| "gemini-2.5-flash"
