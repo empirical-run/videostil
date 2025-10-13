@@ -131,7 +131,10 @@ export async function startServer(
   // If workingDir is provided, use it directly; otherwise use ~/.videostil
   const rootPath = options.workingDir
     ? path.resolve(options.workingDir)
-    : path.join(process.env.HOME || process.env.USERPROFILE || process.cwd(), ".videostil");
+    : path.join(
+        process.env.HOME || process.env.USERPROFILE || process.cwd(),
+        ".videostil",
+      );
 
   let workingDir: string | undefined;
   let currentAnalysisId: string | undefined;

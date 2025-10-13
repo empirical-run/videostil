@@ -239,12 +239,24 @@ export class FFmpegClient {
 
     // Display package identification banner
     console.log("");
-    console.log("╔═══════════════════════════════════════════════════════════╗");
-    console.log("║                                                           ║");
-    console.log("║   🎬 VideoStil - Video Frame Extraction for LLMs          ║");
-    console.log("║   Made with ❤️  by Empirical Team                          ║");
-    console.log("║                                                           ║");
-    console.log("╚═══════════════════════════════════════════════════════════╝");
+    console.log(
+      "╔═══════════════════════════════════════════════════════════╗",
+    );
+    console.log(
+      "║                                                           ║",
+    );
+    console.log(
+      "║   🎬 VideoStil - Video Frame Extraction for LLMs          ║",
+    );
+    console.log(
+      "║   Made with ❤️  by Empirical Team                          ║",
+    );
+    console.log(
+      "║                                                           ║",
+    );
+    console.log(
+      "╚═══════════════════════════════════════════════════════════╝",
+    );
     console.log("");
 
     // Create working directory in ~/.videostil/

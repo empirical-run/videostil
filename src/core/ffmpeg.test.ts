@@ -174,38 +174,31 @@ describe("FFmpegClient", () => {
     },
   );
 
-  it(
-    "should create analysis metadata file",
-    { timeout: 120000 },
-    async () => {
-      const result = await client.extractUniqueFrames({
-        videoUrl,
-        fps: 10,
-        threshold: 0.1,
-        startTime: 0,
-        duration: 3,
-        workingDir: outputDir,
-      });
+  it("should create analysis metadata file", { timeout: 120000 }, async () => {
+    const result = await client.extractUniqueFrames({
+      videoUrl,
+      fps: 10,
+      threshold: 0.1,
+      startTime: 0,
+      duration: 3,
+      workingDir: outputDir,
+    });
 
-      // Check that analysis-result.json was created
-      const workingDirPath = path.isAbsolute(outputDir)
-        ? outputDir
-        : path.join(process.cwd(), outputDir);
+    // Check that analysis-result.json was created
+    const workingDirPath = path.isAbsolute(outputDir)
+      ? outputDir
+      : path.join(process.cwd(), outputDir);
 
-      const analysisFilePath = path.join(
-        workingDirPath,
-        "analysis-result.json",
-      );
-      expect(fs.existsSync(analysisFilePath)).toBeTruthy();
+    const analysisFilePath = path.join(workingDirPath, "analysis-result.json");
+    expect(fs.existsSync(analysisFilePath)).toBeTruthy();
 
-      // Read and verify the analysis file
-      const analysisContent = fs.readFileSync(analysisFilePath, "utf8");
-      const analysisData = JSON.parse(analysisContent);
+    // Read and verify the analysis file
+    const analysisContent = fs.readFileSync(analysisFilePath, "utf8");
+    const analysisData = JSON.parse(analysisContent);
 
-      expect(analysisData.video_url).toBe(videoUrl);
-      expect(analysisData.unique_frames_count).toBe(result.uniqueFrames.length);
-      expect(analysisData.params.fps).toBe(10);
-      expect(analysisData.params.threshold).toBe(0.1);
-    },
-  );
+    expect(analysisData.video_url).toBe(videoUrl);
+    expect(analysisData.unique_frames_count).toBe(result.uniqueFrames.length);
+    expect(analysisData.params.fps).toBe(10);
+    expect(analysisData.params.threshold).toBe(0.1);
+  });
 });
