@@ -234,7 +234,7 @@ export async function startServer(
       }
 
       const uniqueFramesDir = path.join(workingDir, "unique_frames");
-      const fps = analysis.data?.params?.fps || 30;
+      const fps = analysis.data?.params?.fps || 25;
 
       try {
         const frameFiles = fs
@@ -420,7 +420,7 @@ export async function startServer(
         // Get current analysis data for FPS
         const analyses = await discoverAnalysisDirectories(rootPath);
         const analysis = analyses.find((a) => a.id === currentAnalysisId);
-        const fps = analysis?.data?.params?.fps || 30;
+        const fps = analysis?.data?.params?.fps || 25;
 
         // Helper function to compute diff data for a directory
         async function computeDiffData(dirPath: string): Promise<{

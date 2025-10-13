@@ -5,18 +5,21 @@ import type {
   CanonicalMessage,
 } from "./types";
 import { VIDEO_ANALYSIS_SYSTEM_PROMPT } from "./constants";
-import { processAnalysisAndLoadFrames, VideoAnalysisSection } from "./parser";
+import { parseXmlSummaryToJson, VideoAnalysisSection } from "../utils";
+import { requireApiKeys, type ApiKeysConfig } from "../utils/api-keys";
 
 async function getFrameAnalysisFromLLM({
   selectedModel,
   systemPrompt,
   frameBatch,
   initialPrompt = "Analyse the frames and give me a summary at the end.",
+  apiKeys,
 }: {
   selectedModel: SupportedChatModels;
   systemPrompt: string;
   frameBatch: Attachment[];
   initialPrompt?: string;
+  apiKeys: ApiKeysConfig;
 }): Promise<{
   analysis: string;
   allMessages: CanonicalMessage[];
@@ -24,24 +27,19 @@ async function getFrameAnalysisFromLLM({
   const chatModel = createChatModel(
     [],
     selectedModel,
-    process.env as Record<string, string>,
+    apiKeys as Record<string, string>,
   );
 
-  // Push user message with initial prompt
-  chatModel.pushUserMessage(initialPrompt, []);
+  // Push user message with initial prompt and frame attachments
+  const parts = [
+    { text: initialPrompt },
+    ...frameBatch.map((attachment) => ({
+      text: `Frame ID: ${attachment.name.split(".")[0]}`,
+      attachments: [attachment],
+    })),
+  ];
 
-  // Add frame parts to the message (each frame gets its own part)
-  const messages = chatModel.messages;
-  if (messages.length > 0 && messages[0]) {
-    const userMessage = messages[0];
-    userMessage.parts = [
-      ...userMessage.parts,
-      ...frameBatch.map((attachment) => ({
-        text: `Frame ID: ${attachment.name.split(".")[0]}`,
-        attachments: [attachment],
-      })),
-    ];
-  }
+  chatModel.pushUserPartsMessage(parts);
 
   // Get LLM response
   const response = await chatModel.getLLMResponse({
@@ -87,7 +85,6 @@ export interface AnalyseFramesResult {
   analysis: string;
   allMessages: CanonicalMessage[];
   parsedXml: VideoAnalysisSection[];
-  keyFrameImagesMap: Map<string, { type: "image/png"; base64Data: string }>;
 }
 
 export async function analyseFrames({
@@ -96,13 +93,18 @@ export async function analyseFrames({
   frameBatch,
   systemPrompt,
   initialUserPrompt,
+  apiKeys,
 }: {
   selectedModel: SupportedChatModels;
   workingDirectory: string;
   frameBatch: Attachment[];
-  systemPrompt: string;
-  initialUserPrompt: string;
+  systemPrompt?: string;
+  initialUserPrompt?: string;
+  apiKeys?: ApiKeysConfig;
 }): Promise<AnalyseFramesResult> {
+  // Ensure API keys are available, will throw if not found
+  requireApiKeys(apiKeys);
+
   const { analysis: rawAnalysis, allMessages } = await getFrameAnalysisFromLLM({
     selectedModel,
     systemPrompt: systemPrompt ? systemPrompt : VIDEO_ANALYSIS_SYSTEM_PROMPT,
@@ -110,15 +112,14 @@ export async function analyseFrames({
     initialPrompt: initialUserPrompt
       ? initialUserPrompt
       : "Analyse the frames and give me a summary at the end.",
+    apiKeys: apiKeys!,
   });
 
-  const { parsedSections, keyFrameImagesMap } =
-    await processAnalysisAndLoadFrames(rawAnalysis, workingDirectory);
+  const parsedSections = parseXmlSummaryToJson(rawAnalysis);
 
   return {
     analysis: rawAnalysis,
     allMessages,
     parsedXml: parsedSections,
-    keyFrameImagesMap,
   };
 }

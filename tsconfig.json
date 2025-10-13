@@ -12,8 +12,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "emitDeclarationOnly": true,
-    "allowImportingTsExtensions": true,
     "moduleResolution": "node16",
     "resolveJsonModule": true,
     "types": ["node"]

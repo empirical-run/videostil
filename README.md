@@ -6,7 +6,7 @@ videostil extracts and deduplicates video frames, converting videos into LLM-fri
 
 ## Features
 
-- 🎬 Extract frames at configurable FPS
+- 🎬 Extract frames at configurable FPS (default: 25)
 - 🔍 Smart deduplication (3 algorithms: greedy, dynamic programming, sliding window)
 - 📦 Simple API and CLI
 - ⚡ Fast processing with caching
@@ -14,6 +14,7 @@ videostil extracts and deduplicates video frames, converting videos into LLM-fri
 - 🖼️ Automatic scaling and padding to 1280x720
 - 🌐 Built-in analysis viewer server
 - 📊 Frame similarity analysis and visualization
+- 🤖 Optional LLM-powered video analysis (supports Anthropic, Google, OpenAI)
 
 ## Installation
 
@@ -56,12 +57,12 @@ npx videostil serve --port 8080 --no-open
 ### API Usage
 
 ```typescript
-import { extractUniqueFrames, serve } from 'videostil';
+import { extractUniqueFrames, startAnalysisServer, analyseFrames } from 'videostil';
 
 // Extract and deduplicate frames
 const result = await extractUniqueFrames({
   videoUrl: 'https://example.com/video.mp4',
-  fps: 30,
+  fps: 25,
   threshold: 0.001,
   algo: 'gd' // greedy (default), or 'dp', 'sw'
 });
@@ -76,8 +77,28 @@ for (const frame of result.uniqueFrames) {
   console.log(`Base64: ${frame.base64.substring(0, 50)}...`);
 }
 
+// Optional: Analyze frames with LLM
+const analysisResult = await analyseFrames({
+  selectedModel: 'claude-sonnet-4-20250514',
+  workingDirectory: result.uniqueFramesDir,
+  frameBatch: result.uniqueFrames.map(frame => ({
+    name: frame.fileName,
+    contentType: 'image/png',
+    base64Data: frame.base64
+  })),
+  systemPrompt: 'You are a video analysis assistant.',
+  initialUserPrompt: 'Analyze these video frames and provide insights.',
+  apiKeys: {
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY
+  }
+});
+
+console.log(analysisResult.analysis);
+
 // Start analysis viewer server
-const server = await serve({
+const server = await startAnalysisServer({
   port: 63745,
   openBrowser: true
 });
@@ -93,7 +114,7 @@ Extract and deduplicate frames from a video.
 
 **Options:**
 - `videoUrl` (string, required): Video URL or local file path
-- `fps` (number, default: 30): Frames per second to extract
+- `fps` (number, default: 25): Frames per second to extract
 - `threshold` (number, default: 0.001): Deduplication similarity threshold (0.0-1.0)
 - `startTime` (number, optional): Start extraction at X seconds into video
 - `duration` (number, optional): Extract only X seconds of video
@@ -109,7 +130,7 @@ Extract and deduplicate frames from a video.
 - `videoDurationSeconds` (number): Video duration in seconds
 - `uniqueFramesDir` (string): Path to unique frames directory
 
-### `serve(options)`
+### `startAnalysisServer(options)`
 
 Start analysis viewer server to browse and visualize extracted frames.
 
@@ -125,6 +146,26 @@ Start analysis viewer server to browse and visualize extracted frames.
 - `host` (string): Server host
 - `server` (http.Server): Node.js HTTP server instance
 - `close` (() => Promise<void>): Function to close the server
+
+### `analyseFrames(options)`
+
+Analyze video frames using AI models from Anthropic, Google, or OpenAI.
+
+**Options:**
+- `selectedModel` (string, required): Model to use (e.g., "claude-sonnet-4-20250514", "gpt-5-2025-08-07", "gemini-2.5-pro")
+- `workingDirectory` (string, required): Directory containing the frames
+- `frameBatch` (Attachment[], required): Array of frame attachments with base64 data
+- `systemPrompt` (string, required): System prompt for the AI
+- `initialUserPrompt` (string, required): User prompt for the AI
+- `apiKeys` (object, optional): API keys object with ANTHROPIC_API_KEY, GOOGLE_API_KEY, and/or OPENAI_API_KEY
+
+**Returns:** `AnalyseFramesResult`
+- `analysis` (string): Raw analysis text from the AI
+- `allMessages` (CanonicalMessage[]): All messages in the conversation
+- `parsedXml` (VideoAnalysisSection[]): Parsed XML sections from analysis
+- `keyFrameImagesMap` (Map): Map of key frame images
+
+**Note:** At least one API key must be provided either in the `apiKeys` parameter or as environment variables.
 
 ### Frame Information
 
@@ -143,16 +184,21 @@ Each frame in `uniqueFrames` contains:
 videostil <video-url> [options]
 
 Options:
-  --fps <number>        Frames per second (default: 30)
-  --threshold <number>  Deduplication threshold (default: 0.001)
-  --algo <string>       Algorithm: gd|dp|sw (default: gd)
-  --start <seconds>     Start time in video
-  --duration <seconds>  Duration to extract
-  --output <dir>        Output directory
-  --no-serve            Don't start viewer after extraction
-  --help               Show help
-  --version            Show version
+  --fps <number>          Frames per second (default: 25)
+  --threshold <number>    Deduplication threshold (default: 0.01)
+  --algo <string>         Algorithm: gd|dp|sw (default: gd)
+  --start <seconds>       Start time in video
+  --duration <seconds>    Duration to extract
+  --output <dir>          Output directory
+  --no-serve              Don't start viewer after extraction
+  --model <string>        LLM model for analysis (e.g., claude-sonnet-4-20250514)
+  --system-prompt <str>   System prompt for LLM analysis
+  --user-prompt <str>     User prompt for LLM analysis
+  --help                  Show help
+  --version               Show version
 ```
+
+**Note:** LLM analysis requires API keys. Set `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, or `OPENAI_API_KEY` environment variables to enable automatic frame analysis.
 
 ### Serve Command
 
@@ -169,11 +215,11 @@ Options:
 ## How It Works
 
 1. **Download/Copy Video**: Fetches video from URL or copies local file
-2. **Validate Duration**: Ensures video is ≤15 minutes
-3. **Extract Frames**: Uses ffmpeg to extract frames at specified FPS
-4. **Scale & Pad**: Normalizes all frames to 1280x720 (maintains aspect ratio)
-5. **Deduplicate**: Removes duplicate frames using selected algorithm
-6. **Store Results**: Saves unique frames and metadata
+2. **Extract Frames**: Uses ffmpeg to extract frames at specified FPS
+3. **Scale & Pad**: Normalizes all frames to 1280x720 (maintains aspect ratio)
+4. **Deduplicate**: Removes duplicate frames using selected algorithm
+5. **Store Results**: Saves unique frames and metadata
+6. **Analyze (Optional)**: If API keys are available, analyzes frames using LLM
 
 ### Deduplication Algorithms
 
@@ -255,10 +301,10 @@ const result = await extractUniqueFrames({
 ### Analysis Viewer Server
 
 ```typescript
-import { serve } from 'videostil';
+import { startAnalysisServer } from 'videostil';
 
 // Start server with custom options
-const server = await serve({
+const server = await startAnalysisServer({
   port: 8080,
   host: '0.0.0.0',
   openBrowser: false
@@ -268,6 +314,34 @@ console.log(`Analysis viewer: ${server.url}`);
 
 // Close server when done
 await server.close();
+```
+
+### LLM Frame Analysis
+
+```typescript
+import { extractUniqueFrames, analyseFrames } from 'videostil';
+
+// First extract frames
+const result = await extractUniqueFrames({
+  videoUrl: 'video.mp4',
+  fps: 25,
+  threshold: 0.01
+});
+
+// Analyze with Claude
+const analysis = await analyseFrames({
+  selectedModel: 'claude-sonnet-4-20250514',
+  workingDirectory: result.uniqueFramesDir,
+  frameBatch: result.uniqueFrames.map(frame => ({
+    name: frame.fileName,
+    contentType: 'image/png',
+    base64Data: frame.base64
+  })),
+  systemPrompt: 'Analyze these video frames for key events and transitions.',
+  initialUserPrompt: 'What are the main scenes in this video?'
+});
+
+console.log(analysis.analysis);
 ```
 
 ## Contributing

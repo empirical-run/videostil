@@ -8,7 +8,7 @@
     "access": "public"
   },
   "bin": {
-    "videostil": "./dist/cli.js"
+    "videostil": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc && cp src/server/viewer.html dist/server/",
@@ -48,7 +48,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@empiricalrun/llm": "^0.23.0",
+    "@empiricalrun/llm": "^0.24.0",
     "commander": "^14.0.1",
     "open": "^10.0.0",
     "pixelmatch": "^6.0.0",
