@@ -131,7 +131,10 @@ export async function startServer(
   // If workingDir is provided, use it directly; otherwise use ~/.videostil
   const rootPath = options.workingDir
     ? path.resolve(options.workingDir)
-    : path.join(process.env.HOME || process.env.USERPROFILE || process.cwd(), ".videostil");
+    : path.join(
+        process.env.HOME || process.env.USERPROFILE || process.cwd(),
+        ".videostil",
+      );
 
   let workingDir: string | undefined;
   let currentAnalysisId: string | undefined;
@@ -231,7 +234,7 @@ export async function startServer(
       }
 
       const uniqueFramesDir = path.join(workingDir, "unique_frames");
-      const fps = analysis.data?.params?.fps || 30;
+      const fps = analysis.data?.params?.fps || 25;
 
       try {
         const frameFiles = fs
@@ -417,7 +420,7 @@ export async function startServer(
         // Get current analysis data for FPS
         const analyses = await discoverAnalysisDirectories(rootPath);
         const analysis = analyses.find((a) => a.id === currentAnalysisId);
-        const fps = analysis?.data?.params?.fps || 30;
+        const fps = analysis?.data?.params?.fps || 25;
 
         // Helper function to compute diff data for a directory
         async function computeDiffData(dirPath: string): Promise<{

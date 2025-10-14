@@ -153,32 +153,8 @@ export class FFmpegClient {
   ): Promise<string> {
     const uniqueFramesDir = path.join(workingDir, "unique_frames");
 
-    // Check if directory exists and has frames
-    const dirExists = await fs
-      .access(uniqueFramesDir)
-      .then(() => true)
-      .catch(() => false);
-    let hasExistingFrames = false;
-
-    if (dirExists) {
-      try {
-        const existingFiles = await fs.readdir(uniqueFramesDir);
-        hasExistingFrames = existingFiles.some((file) => file.endsWith(".png"));
-      } catch {
-        hasExistingFrames = false;
-      }
-    }
-
-    if (hasExistingFrames) {
-      console.log(
-        `Appending ${uniqueFrames.length} frames to existing ${uniqueFramesDir}`,
-      );
-    } else {
-      await this.ensureEmptyDir(uniqueFramesDir);
-      console.log(
-        `Creating fresh ${uniqueFramesDir} with ${uniqueFrames.length} frames`,
-      );
-    }
+    // Ensure directory exists and is empty
+    await this.ensureEmptyDir(uniqueFramesDir);
 
     for (let i = 0; i < uniqueFrames.length; i++) {
       const frame = uniqueFrames[i];
@@ -197,17 +173,6 @@ export class FFmpegClient {
       );
 
       try {
-        if (hasExistingFrames) {
-          const frameExists = await fs
-            .access(uniqueFramePath)
-            .then(() => true)
-            .catch(() => false);
-          if (frameExists) {
-            console.log(`Frame ${uniqueFramePath} already exists, skipping`);
-            continue;
-          }
-        }
-
         await fs.copyFile(originalPath, uniqueFramePath);
       } catch (error) {
         console.warn(
@@ -229,7 +194,7 @@ export class FFmpegClient {
   async extractUniqueFrames(options: ExtractOptions): Promise<ExtractResult> {
     const {
       videoUrl,
-      fps = 30,
+      fps = 25,
       threshold = 0.001,
       startTime,
       duration,
@@ -239,12 +204,24 @@ export class FFmpegClient {
 
     // Display package identification banner
     console.log("");
-    console.log("╔═══════════════════════════════════════════════════════════╗");
-    console.log("║                                                           ║");
-    console.log("║   🎬 VideoStil - Video Frame Extraction for LLMs          ║");
-    console.log("║   Made with ❤️  by Empirical Team                          ║");
-    console.log("║                                                           ║");
-    console.log("╚═══════════════════════════════════════════════════════════╝");
+    console.log(
+      "╔═══════════════════════════════════════════════════════════╗",
+    );
+    console.log(
+      "║                                                           ║",
+    );
+    console.log(
+      "║   🎬 VideoStil - Video Frame Extraction for LLMs          ║",
+    );
+    console.log(
+      "║   Made with ❤️  by Empirical Team                          ║",
+    );
+    console.log(
+      "║                                                           ║",
+    );
+    console.log(
+      "╚═══════════════════════════════════════════════════════════╝",
+    );
     console.log("");
 
     // Create working directory in ~/.videostil/
