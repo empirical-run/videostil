@@ -14,7 +14,7 @@
     "build": "tsc && cp src/server/viewer.html dist/server/",
     "dev": "nodemon",
     "dev:ts": "tsc --watch",
-    "prepare": "npm run build",
+    "prepare": "npm run build && husky",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "check": "biome check --write .",
@@ -60,6 +60,7 @@
     "@types/node": "^20.0.0",
     "@types/pixelmatch": "^5.2.6",
     "@vitest/ui": "^3.2.4",
+    "husky": "^9.1.7",
     "nodemon": "^3.1.10",
     "typescript": "^5.3.0",
     "vitest": "^3.2.4"
