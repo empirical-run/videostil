@@ -153,15 +153,8 @@ export class FFmpegClient {
   ): Promise<string> {
     const uniqueFramesDir = path.join(workingDir, "unique_frames");
 
-    // Check if directory exists and has frames
-    const dirExists = await fs
-      .access(uniqueFramesDir)
-      .then(() => true)
-      .catch(() => false);
-
-    if (dirExists) {
-      await this.ensureEmptyDir(uniqueFramesDir);
-    }
+    // Ensure directory exists and is empty
+    await this.ensureEmptyDir(uniqueFramesDir);
 
     for (let i = 0; i < uniqueFrames.length; i++) {
       const frame = uniqueFrames[i];
