@@ -1,5 +1,11 @@
 # videostil
 
+## 0.2.1
+
+### Patch Changes
+
+- 17af35e: feat: progress bars for download and de-dupe, instructions for missing deps
+
 ## 0.2.0
 
 ### Minor Changes
