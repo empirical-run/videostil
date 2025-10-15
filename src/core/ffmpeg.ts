@@ -244,7 +244,7 @@ export class FFmpegClient {
       "║   🎬 videostil - Bringing Video Understanding to Every LLM      ║",
     );
     console.log(
-      "║   Made with ❤️  by Empirical Team                               ║",
+      "║   Made with ❤️  by Empirical Team                                ║",
     );
     console.log(
       "║                                                                 ║",
