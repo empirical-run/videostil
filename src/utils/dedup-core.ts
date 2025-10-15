@@ -20,17 +20,12 @@ export async function deduplicateFrames(
   const loader = new ImageLoader();
   const approach = ALGO_MAP[algo] || DEDUP_CONFIG.DEFAULT_APPROACH;
 
-  const startTime = performance.now();
-  const startMemory = process.memoryUsage().heapUsed / 1024 / 1024; // MB
-
   console.log(
     `[${logPrefix}] Starting deduplication with ${approach} approach`,
   );
   console.log(
     `[${logPrefix}] Input: ${frames.length} frames, Threshold: ${threshold}`,
   );
-
-  performance.mark(`${logPrefix}-start`);
 
   let uniqueFrames: FrameInfo[] = [];
 
@@ -71,30 +66,5 @@ export async function deduplicateFrames(
     return uniqueFrames;
   } finally {
     loader.clearCache();
-
-    performance.mark(`${logPrefix}-end`);
-    performance.measure(
-      `${logPrefix}-total`,
-      `${logPrefix}-start`,
-      `${logPrefix}-end`,
-    );
-
-    const endTime = performance.now();
-    const endMemory = process.memoryUsage().heapUsed / 1024 / 1024; // MB
-
-    const executionTimeMs = endTime - startTime;
-    const memoryUsedMB = Math.max(0, endMemory - startMemory);
-    const duplicatesRemoved = frames.length - (uniqueFrames?.length ?? 0);
-
-    console.log(`[${logPrefix}] === DEDUPLICATION SUMMARY ===`);
-    console.log(`[${logPrefix}] Approach: ${approach}`);
-    console.log(
-      `[${logPrefix}] Execution time: ${executionTimeMs.toFixed(2)}ms`,
-    );
-    console.log(`[${logPrefix}] Memory used: ${memoryUsedMB.toFixed(2)}MB`);
-    console.log(`[${logPrefix}] Input frames: ${frames.length}`);
-    console.log(`[${logPrefix}] Output frames: ${uniqueFrames?.length ?? 0}`);
-    console.log(`[${logPrefix}] Duplicates removed: ${duplicatesRemoved}`);
-    console.log(`[${logPrefix}] === END SUMMARY ===`);
   }
 }

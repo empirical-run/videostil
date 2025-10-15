@@ -2,6 +2,7 @@ import type { FrameInfo } from "../types/index.js";
 import { DEDUP_CONFIG } from "./config.js";
 import { ImageLoader } from "./image-loader.js";
 import { compareImageBuffers } from "./image-comparison.js";
+import { updateProgressBar, finishProgressBar } from "./progress-bar.js";
 
 export async function deduplicateImagesDP(
   images: FrameInfo[],
@@ -28,13 +29,13 @@ export async function deduplicateImagesDP(
         original: imgData,
       });
 
-      if ((i + 1) % 50 === 0 || i === images.length - 1) {
-        console.log(`[${logPrefix}] Loaded ${i + 1}/${images.length} images`);
-      }
+      updateProgressBar(i + 1, images.length, `${logPrefix} Loading`);
     } catch (error) {
-      console.error(`[${logPrefix}] Error loading image ${i + 1}:`, error);
+      console.error(`\n[${logPrefix}] Error loading image ${i + 1}:`, error);
     }
   }
+
+  finishProgressBar();
 
   const n = processedImages.length;
   if (n === 0) {
@@ -81,10 +82,16 @@ export async function deduplicateImagesDP(
       keep[i] = true;
     }
 
-    if ((i + 1) % 50 === 0 || i === n - 1) {
-      console.log(`[${logPrefix}] Processed ${i + 1}/${n} images`);
-    }
+    const uniqueCount = keep.filter(Boolean).length;
+    updateProgressBar(
+      i + 1,
+      n,
+      `${logPrefix} Processing`,
+      `| Unique: ${uniqueCount}`,
+    );
   }
+
+  finishProgressBar();
 
   return processedImages.filter((_, i) => keep[i]).map((img) => img.original);
 }
