@@ -1,5 +1,13 @@
 # videostil
 
+## 0.2.2
+
+### Patch Changes
+
+- 12d7ed4: feat: frame diff calculation on 1st pass only
+- 12d7ed4: feat: graph zoom scroll & vim navigation
+- 12d7ed4: fix: show params, disable algo, fix hash issue
+
 ## 0.2.1
 
 ### Patch Changes
