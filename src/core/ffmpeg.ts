@@ -10,6 +10,7 @@ import type {
 } from "../types/index.js";
 import { deduplicateImageFiles } from "../utils/dedup-fs.js";
 import { updateProgressBar, finishProgressBar } from "../utils/progress-bar.js";
+import { DiffDataCollector } from "../utils/diff-data-collector.js";
 
 const execAsync = promisify(exec);
 
@@ -232,6 +233,10 @@ export class FFmpegClient {
       workingDir,
     } = options;
 
+    if (!workingDir) {
+      throw new Error("Working directory is required");
+    }
+
     // Display package identification banner
     console.log("");
     console.log(
@@ -244,7 +249,7 @@ export class FFmpegClient {
       "║   🎬 videostil - Bringing Video Understanding to Every LLM      ║",
     );
     console.log(
-      "║   Made with ❤️  by Empirical Team                               ║",
+      "║   Made with ❤️  by Empirical Team                                ║",
     );
     console.log(
       "║                                                                 ║",
@@ -261,16 +266,12 @@ export class FFmpegClient {
       .digest("hex")
       .substring(0, 16);
 
-    const homeDir =
-      process.env.HOME || process.env.USERPROFILE || process.cwd();
-    const videostilRoot = path.join(homeDir, ".videostil");
 
-    const absoluteWorkingDir = workingDir || path.join(videostilRoot, urlHash);
-    await fs.mkdir(absoluteWorkingDir, { recursive: true });
+    await fs.mkdir(workingDir, { recursive: true });
 
-    const videoPath = path.join(absoluteWorkingDir, `video_${urlHash}.webm`);
+    const videoPath = path.join(workingDir, `video_${urlHash}.webm`);
 
-    console.log("Working directory:", absoluteWorkingDir);
+    console.log("Working directory:", workingDir);
 
     try {
       // Download or copy video
@@ -322,7 +323,7 @@ export class FFmpegClient {
       );
 
       // Extract frames
-      const framesDir = path.join(absoluteWorkingDir, "frames");
+      const framesDir = path.join(workingDir, "frames");
       const allFramePaths = await this.extractFrames({
         videoPath,
         outputDir: framesDir,
@@ -337,6 +338,9 @@ export class FFmpegClient {
         throw new Error("No frames were extracted from the video");
       }
 
+      // Create collector for all frames diff data
+      const allFramesCollector = new DiffDataCollector();
+
       // Deduplicate frames
       const uniqueFrames = await deduplicateImageFiles({
         imagePaths: allFramePaths,
@@ -345,6 +349,7 @@ export class FFmpegClient {
         algo,
         fps,
         frameIndexPadding: FRAME_INDEX_PADDING,
+        diffCollector: allFramesCollector,
       });
 
       console.log(
@@ -357,8 +362,32 @@ export class FFmpegClient {
 
       const uniqueFramesDir = await this.storeUniqueFrames(
         uniqueFrames,
-        absoluteWorkingDir,
+        workingDir,
       );
+
+      // Extract unique frames diff data from the all frames data
+      console.log("Extracting diff data for unique frames...");
+      const uniqueFrameIndices = new Set(uniqueFrames.map((f) => f.index));
+      const { allFrames, uniqueFrames: uniqueFramesGraphData } =
+        allFramesCollector.getFilteredGraphData(uniqueFrameIndices);
+
+      // Generate and save cache file with diff data
+      const cacheData = {
+        allFrames,
+        uniqueFrames: uniqueFramesGraphData,
+        computedAt: new Date().toISOString(),
+      };
+
+      const cacheFilePath = path.join(
+        workingDir,
+        "frame-diff-data.json",
+      );
+      await fs.writeFile(
+        cacheFilePath,
+        JSON.stringify(cacheData, null, 2),
+        "utf8",
+      );
+      console.log(`Frame diff cache saved to: ${cacheFilePath}`);
 
       // Save analysis metadata
       const analysisData = {
@@ -378,7 +407,7 @@ export class FFmpegClient {
       };
 
       const analysisFilePath = path.join(
-        absoluteWorkingDir,
+        workingDir,
         "analysis-result.json",
       );
       await fs.writeFile(

@@ -169,6 +169,7 @@ export async function startServer(
         video_url: analysis.data.video_url,
         analysis_id: analysis.data.analysis_id,
         unique_frames_count: analysis.data.unique_frames_count,
+        params: analysis.data.params,
       }));
 
       res.statusCode = 200;
@@ -395,172 +396,26 @@ export async function startServer(
         return;
       }
 
-      const cacheFilePath = path.join(workingDir, "frame-diff-cache.json");
+      const diffDataFilePath = path.join(workingDir, "frame-diff-data.json");
 
       try {
-        // Check if cache exists and is valid
-        let shouldUseCache = false;
-        try {
-          const cacheStats = await fs.promises.stat(cacheFilePath);
-          const uniqueDir = path.join(workingDir, "unique_frames");
-          const uniqueStats = await fs.promises.stat(uniqueDir);
-          shouldUseCache = cacheStats.mtime >= uniqueStats.mtime;
-        } catch {
-          shouldUseCache = false;
-        }
-
-        if (shouldUseCache) {
-          const cachedData = await fs.promises.readFile(cacheFilePath, "utf8");
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          res.end(cachedData);
-          return;
-        }
-
-        // Get current analysis data for FPS
-        const analyses = await discoverAnalysisDirectories(rootPath);
-        const analysis = analyses.find((a) => a.id === currentAnalysisId);
-        const fps = analysis?.data?.params?.fps || 25;
-
-        // Helper function to compute diff data for a directory
-        async function computeDiffData(dirPath: string): Promise<{
-          points: Array<{
-            frameIndex: number;
-            diffFraction: number;
-            timestamp: string;
-          }>;
-          metadata: {
-            totalFrames: number;
-            avgDiff: number;
-            maxDiff: number;
-            minDiff: number;
-          };
-        }> {
-          try {
-            const frameFiles = fs
-              .readdirSync(dirPath)
-              .filter((f) => f.endsWith(".png"))
-              .sort();
-
-            if (frameFiles.length === 0) {
-              return {
-                points: [],
-                metadata: {
-                  totalFrames: 0,
-                  avgDiff: 0,
-                  maxDiff: 0,
-                  minDiff: 0,
-                },
-              };
-            }
-
-            const points: Array<{
-              frameIndex: number;
-              diffFraction: number;
-              timestamp: string;
-            }> = [];
-
-            let sumDiff = 0;
-            let maxDiff = 0;
-            let minDiff = 1;
-            let previousBuffer: Buffer | null = null;
-
-            for (let i = 0; i < frameFiles.length; i++) {
-              const filename = frameFiles[i];
-              if (!filename) continue;
-
-              const frameNumber =
-                parseInt(filename.match(/frame_(\d+)/)?.[1] || String(i), 10) ||
-                i;
-              const framePath = path.join(dirPath, filename);
-
-              try {
-                const currentBuffer = await fs.promises.readFile(framePath);
-                let diffFraction = 0;
-
-                if (previousBuffer) {
-                  const result = await compareImageBuffers(
-                    previousBuffer,
-                    currentBuffer,
-                    0.1,
-                  );
-                  diffFraction = result.diffFraction;
-                  sumDiff += diffFraction;
-                  maxDiff = Math.max(maxDiff, diffFraction);
-                  minDiff = Math.min(minDiff, diffFraction);
-                }
-
-                const timestamp = `${Math.floor(frameNumber / fps / 60)}m${Math.floor(
-                  (frameNumber / fps) % 60,
-                )
-                  .toString()
-                  .padStart(2, "0")}s`;
-
-                points.push({
-                  frameIndex: frameNumber,
-                  diffFraction,
-                  timestamp,
-                });
-
-                previousBuffer = currentBuffer;
-              } catch (error) {
-                console.error(`Error processing frame ${filename}:`, error);
-              }
-            }
-
-            const avgDiff =
-              points.length > 1 ? sumDiff / (points.length - 1) : 0;
-
-            return {
-              points,
-              metadata: {
-                totalFrames: points.length,
-                avgDiff,
-                maxDiff,
-                minDiff: points.length > 1 ? minDiff : 0,
-              },
-            };
-          } catch {
-            return {
-              points: [],
-              metadata: { totalFrames: 0, avgDiff: 0, maxDiff: 0, minDiff: 0 },
-            };
-          }
-        }
-
-        // Compute data for both directories
-        console.log("[frame-diff-data] Computing frame differences...");
-        const [allFramesData, uniqueFramesData] = await Promise.all([
-          computeDiffData(path.join(workingDir, "frames")),
-          computeDiffData(path.join(workingDir, "unique_frames")),
-        ]);
-
-        const responseData = {
-          allFrames: allFramesData,
-          uniqueFrames: uniqueFramesData,
-          cached: false,
-          computedAt: new Date().toISOString(),
-        };
-
-        // Save to cache
-        try {
-          await fs.promises.writeFile(
-            cacheFilePath,
-            JSON.stringify(responseData, null, 2),
-            "utf8",
-          );
-        } catch (error) {
-          console.error("Error saving cache:", error);
-        }
-
+        // Try to read cache file
+        const diffData = await fs.promises.readFile(diffDataFilePath, "utf8");
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(responseData));
+        res.end(diffData);
         return;
       } catch (error) {
-        res.statusCode = 500;
+        // Cache file not found
+        console.error("[frame-diff-data] Data file not found:", error);
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json");
         res.end(
-          `Error computing frame differences: ${error instanceof Error ? error.message : "Unknown error"}`,
+          JSON.stringify({
+            error: "Frame diff data not found",
+            message:
+              "This analysis does not have a frame diff data. Please re-run videostil to generate it.",
+          })
         );
         return;
       }

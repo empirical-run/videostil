@@ -672,7 +672,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            padding: 40px;
+            padding: 20px 15px 15px 15px;
             position: relative;
         }
 
@@ -693,19 +693,19 @@
 
         .graph-modal-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 6px;
+            align-items: center;
         }
 
         .graph-modal-tab {
             background: rgba(255,255,255,0.2);
             color: white;
             border: none;
-            padding: 8px 16px;
-            font-size: 11px;
+            padding: 5px 12px;
+            font-size: 10px;
             font-weight: bold;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 3px;
             transition: background 0.2s;
         }
 
@@ -721,10 +721,10 @@
         .graph-modal-canvas-wrapper {
             background: white;
             border-radius: 8px;
-            padding: 20px;
-            width: 90%;
-            max-width: 1600px;
-            height: 60vh;
+            padding: 12px;
+            width: 96%;
+            max-width: none;
+            height: 72vh;
             position: relative;
         }
 
@@ -756,6 +756,159 @@
         .graph-modal-metadata-value {
             color: white;
             font-weight: bold;
+        }
+
+        /* Zoom Controls */
+        .graph-modal-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+
+        .graph-modal-controls-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .zoom-controls-label {
+            color: rgba(255,255,255,0.7);
+            font-size: 9px;
+            margin-right: 4px;
+            font-weight: bold;
+        }
+
+        .zoom-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+            min-width: 32px;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255,255,255,0.35);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-info {
+            display: flex;
+            gap: 12px;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .zoom-info span {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 3px;
+        }
+
+        /* Canvas cursor is handled dynamically via pan callbacks */
+        .graph-modal-canvas-wrapper canvas {
+            cursor: grab;
+        }
+
+        /* Help overlay styles */
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .help-overlay.active {
+            display: flex;
+        }
+
+        .help-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .help-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #fff;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .help-section {
+            margin-bottom: 20px;
+        }
+
+        .help-section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 8px;
+        }
+
+        .help-shortcut {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        .help-key {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-family: monospace;
+            color: #4a9eff;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .help-description {
+            color: #ccc;
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .help-footer {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+            font-size: 11px;
+            color: #888;
+            text-align: center;
         }
     </style>
   </head>
@@ -840,13 +993,6 @@
               <div id="interleavedResult" class="json-content">No result</div>
             </div>
           </div>
-
-          <div class="result-section">
-            <div class="result-header">Video Info</div>
-            <div class="result-content fixed-height">
-              <div id="videoInfo" class="json-content">No result</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -907,21 +1053,35 @@
     <div id="graphModal" class="graph-modal" tabindex="0">
       <span class="graph-modal-close" onclick="closeGraphModal()">&times;</span>
       <div class="graph-modal-content">
-        <div class="graph-modal-tabs">
-          <button
-            class="graph-modal-tab active"
-            id="modalTabAll"
-            onclick="switchGraphTab('allFrames')"
-          >
-            All Frames
-          </button>
-          <button
-            class="graph-modal-tab"
-            id="modalTabUnique"
-            onclick="switchGraphTab('uniqueFrames')"
-          >
-            Unique Frames
-          </button>
+        <div class="graph-modal-controls">
+          <div class="graph-modal-controls-left">
+            <div class="graph-modal-tabs">
+              <button
+                class="graph-modal-tab active"
+                id="modalTabAll"
+                onclick="switchGraphTab('allFrames')"
+              >
+                All Frames
+              </button>
+              <button
+                class="graph-modal-tab"
+                id="modalTabUnique"
+                onclick="switchGraphTab('uniqueFrames')"
+              >
+                Unique Frames
+              </button>
+            </div>
+            <div class="zoom-controls">
+              <span class="zoom-controls-label">ZOOM:</span>
+              <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+              <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+              <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">Reset</button>
+            </div>
+          </div>
+          <div class="zoom-info">
+            <span id="zoomLevel">Zoom: 100%</span>
+            <span id="visibleRange">Frames: All</span>
+          </div>
         </div>
         <div class="graph-modal-canvas-wrapper">
           <canvas id="modalGraphChart"></canvas>
@@ -949,6 +1109,8 @@
 
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Chart.js Zoom Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
     <script>
         let currentData = null;
@@ -1077,22 +1239,29 @@
                 const analysisItem = document.createElement('div');
                 analysisItem.className = 'analysis-item';
                 analysisItem.onclick = () => loadAnalysis(analysis.id);
-                
+
                 // Format date
                 const date = new Date(analysis.modifiedTime);
                 const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
+
+                // Get params info
+                const params = analysis.params || {};
+                const algo = params.algo || 'gd';
+                const fps = params.fps || 'N/A';
+                const threshold = params.threshold || 'N/A';
+
                 // Truncate video URL for display
                 const videoUrl = analysis.video_url || 'Unknown';
                 const displayUrl = videoUrl.length > 30 ? videoUrl.substring(0, 30) + '...' : videoUrl;
-                
+
                 analysisItem.innerHTML = `
                     <div class="analysis-item-name">${analysis.name}</div>
-                    <div class="analysis-item-info">${analysis.unique_frames_count} frames</div>
                     <div class="analysis-item-info">${displayUrl}</div>
+                    <div class="analysis-item-info">${analysis.unique_frames_count} Unique frames • algo: ${algo}</div>
+                    <div class="analysis-item-info">fps: ${fps} • threshold: ${threshold}</div>
                     <div class="analysis-item-date">${dateStr}</div>
                 `;
-                
+
                 analysesList.appendChild(analysisItem);
             });
         }
@@ -1297,16 +1466,6 @@
                 interleavedResultDiv.textContent = 'No result';
                 interleavedResultDiv.className = 'json-content';
             }
-
-            // Display video info
-            const videoInfo = {
-                url: data.video_url || 'N/A',
-                id: data.analysis_id || 'N/A',
-                model: data.params?.model || 'N/A',
-                fps: data.params?.fps || 'N/A',
-                threshold: data.params?.threshold || 'N/A'
-            };
-            document.getElementById('videoInfo').textContent = JSON.stringify(videoInfo, null, 2);
         }
 
         // REMOVED: Analysis form and file upload controls no longer exist in HTML
@@ -1541,7 +1700,7 @@
 
         // Create Chart.js configuration
         function createChartConfig(data, isMini = false) {
-            return {
+            const config = {
                 type: 'line',
                 data: {
                     labels: data.points.map(p => p.frameIndex),
@@ -1581,7 +1740,50 @@
                                     return `Diff: ${(value * 100).toFixed(2)}%`;
                                 }
                             }
-                        }
+                        },
+                        // Add zoom plugin configuration for modal charts only
+                        zoom: !isMini ? {
+                            pan: {
+                                enabled: false  // Disabled - using custom pan implementation
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1,
+                                    modifierKey: null,
+                                },
+                                drag: {
+                                    enabled: false
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x',
+                                onZoomStart: function(context) {
+                                    // Prevent zoom on horizontal scroll or Shift+wheel
+                                    const event = context.event;
+                                    if (event && event.type === 'wheel') {
+                                        // event is already the native event in Chart.js zoom plugin
+                                        if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+                                            return false; // Cancel zoom
+                                        }
+                                    }
+                                    return true; // Allow zoom
+                                },
+                                onZoomComplete: function({chart}) {
+                                    if (typeof updateZoomInfo === 'function') {
+                                        updateZoomInfo();
+                                    }
+                                }
+                            },
+                            limits: {
+                                x: {
+                                    min: 0,
+                                    max: data.points.length - 1,
+                                    minRange: 10
+                                }
+                            }
+                        } : undefined
                     },
                     scales: {
                         x: {
@@ -1608,6 +1810,8 @@
                     }
                 }
             };
+
+            return config;
         }
 
         // Open graph modal
@@ -1644,6 +1848,285 @@
             document.getElementById('modalMetaAvg').textContent = (data.metadata.avgDiff * 100).toFixed(2) + '%';
             document.getElementById('modalMetaMax').textContent = (data.metadata.maxDiff * 100).toFixed(2) + '%';
             document.getElementById('modalMetaMin').textContent = (data.metadata.minDiff * 100).toFixed(2) + '%';
+
+            // Attach zoom listeners and update zoom info
+            attachZoomListeners();
+            updateZoomInfo();
+        }
+
+        // ========== ZOOM CONTROL FUNCTIONS ==========
+
+        // Zoom in function
+        function zoomIn() {
+            if (!modalChartInstance) return;
+            modalChartInstance.zoom(1.2);
+            updateZoomInfo();
+        }
+
+        // Zoom out function
+        function zoomOut() {
+            if (!modalChartInstance) return;
+            modalChartInstance.zoom(0.8);
+            updateZoomInfo();
+        }
+
+        // Reset zoom function
+        function resetZoom() {
+            if (!modalChartInstance) return;
+            modalChartInstance.resetZoom();
+            updateZoomInfo();
+        }
+
+        // Pan left function (vim 'h')
+        function panLeft() {
+            if (!modalChartInstance) return;
+            const xScale = modalChartInstance.scales.x;
+            if (!xScale) return;
+
+            const currentMin = xScale.options.min !== undefined ? xScale.options.min : xScale.min;
+            const currentMax = xScale.options.max !== undefined ? xScale.options.max : xScale.max;
+            const range = currentMax - currentMin;
+            const dataMin = 0;
+
+            // Pan by 10% of current range
+            const panAmount = -range * 0.1;
+            let newMin = currentMin + panAmount;
+            let newMax = newMin + range;
+
+            // Clamp to boundaries
+            if (newMin < dataMin) {
+                newMin = dataMin;
+                newMax = dataMin + range;
+            }
+
+            xScale.options.min = newMin;
+            xScale.options.max = newMax;
+            modalChartInstance.update('none');
+            updateZoomInfo();
+        }
+
+        // Pan right function (vim 'l')
+        function panRight() {
+            if (!modalChartInstance) return;
+            const xScale = modalChartInstance.scales.x;
+            if (!xScale) return;
+
+            const currentMin = xScale.options.min !== undefined ? xScale.options.min : xScale.min;
+            const currentMax = xScale.options.max !== undefined ? xScale.options.max : xScale.max;
+            const range = currentMax - currentMin;
+            const dataMax = modalChartInstance.data.labels.length - 1;
+
+            // Pan by 10% of current range
+            const panAmount = range * 0.1;
+            let newMin = currentMin + panAmount;
+            let newMax = newMin + range;
+
+            // Clamp to boundaries
+            if (newMax > dataMax) {
+                newMax = dataMax;
+                newMin = dataMax - range;
+            }
+
+            xScale.options.min = newMin;
+            xScale.options.max = newMax;
+            modalChartInstance.update('none');
+            updateZoomInfo();
+        }
+
+        // Pan to start (Home key)
+        function panToStart() {
+            if (!modalChartInstance) return;
+            const xScale = modalChartInstance.scales.x;
+            if (!xScale) return;
+
+            const currentMin = xScale.options.min !== undefined ? xScale.options.min : xScale.min;
+            const currentMax = xScale.options.max !== undefined ? xScale.options.max : xScale.max;
+            const range = currentMax - currentMin;
+
+            xScale.options.min = 0;
+            xScale.options.max = range;
+            modalChartInstance.update('none');
+            updateZoomInfo();
+        }
+
+        // Pan to end (End key)
+        function panToEnd() {
+            if (!modalChartInstance) return;
+            const xScale = modalChartInstance.scales.x;
+            if (!xScale) return;
+
+            const currentMin = xScale.options.min !== undefined ? xScale.options.min : xScale.min;
+            const currentMax = xScale.options.max !== undefined ? xScale.options.max : xScale.max;
+            const range = currentMax - currentMin;
+            const dataMax = modalChartInstance.data.labels.length - 1;
+
+            xScale.options.min = dataMax - range;
+            xScale.options.max = dataMax;
+            modalChartInstance.update('none');
+            updateZoomInfo();
+        }
+
+        // Update zoom level and visible range display
+        function updateZoomInfo() {
+            if (!modalChartInstance) return;
+
+            const xScale = modalChartInstance.scales.x;
+            if (!xScale) return;
+
+            // Get original data length
+            const originalData = currentModalTab === 'allFrames'
+                ? graphData.allFrames
+                : graphData.uniqueFrames;
+
+            if (!originalData || !originalData.points) return;
+
+            const total = originalData.points.length;
+            if (total === 0) return;
+
+            // Get the visible range from scale
+            const minIndex = Math.max(0, Math.floor(xScale.min));
+            const maxIndex = Math.min(total - 1, Math.ceil(xScale.max));
+            const visibleCount = maxIndex - minIndex + 1;
+
+            // Calculate zoom level
+            const zoomLevel = total > 0 ? (total / visibleCount) * 100 : 100;
+
+            // Update zoom level display
+            document.getElementById('zoomLevel').textContent =
+                `Zoom: ${Math.round(zoomLevel)}%`;
+
+            // Update visible range display
+            if (visibleCount >= total - 1) {
+                document.getElementById('visibleRange').textContent = 'Frames: All';
+            } else {
+                // Get actual frame indices from the data
+                const startFrame = originalData.points[minIndex].frameIndex;
+                const endFrame = originalData.points[maxIndex].frameIndex;
+                document.getElementById('visibleRange').textContent =
+                    `Frames: ${startFrame} - ${endFrame}`;
+            }
+        }
+
+        // Attach zoom event listeners to update info during interaction
+        function attachZoomListeners() {
+            if (!modalChartInstance) return;
+
+            const canvas = document.getElementById('modalGraphChart');
+            if (!canvas) return;
+
+            // Variables for drag panning
+            let isDragging = false;
+            let startX = 0;
+            let startScaleMin = 0;
+            let startScaleMax = 0;
+
+            // Mouse down - start drag
+            canvas.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                const xScale = modalChartInstance.scales.x;
+                if (xScale) {
+                    startScaleMin = xScale.min;
+                    startScaleMax = xScale.max;
+                }
+                canvas.style.cursor = 'grabbing';
+            });
+
+            // Mouse move - perform drag pan
+            canvas.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+
+                const xScale = modalChartInstance.scales.x;
+                if (!xScale) return;
+
+                const dx = e.clientX - startX;
+                const canvasWidth = canvas.width;
+                const range = startScaleMax - startScaleMin;
+
+                // Get the total data range
+                const dataMin = 0;
+                const dataMax = modalChartInstance.data.labels.length - 1;
+
+                // Convert pixel movement to data units
+                const panAmount = -(dx / canvasWidth) * range;
+
+                // Calculate new bounds
+                let newMin = startScaleMin + panAmount;
+                let newMax = startScaleMax + panAmount;
+
+                // Clamp to data boundaries
+                if (newMin < dataMin) {
+                    newMin = dataMin;
+                    newMax = dataMin + range;
+                }
+                if (newMax > dataMax) {
+                    newMax = dataMax;
+                    newMin = dataMax - range;
+                }
+
+                // Apply new scale limits
+                xScale.options.min = newMin;
+                xScale.options.max = newMax;
+
+                modalChartInstance.update('none');
+                updateZoomInfo();
+            });
+
+            // Mouse up - end drag
+            const endDrag = function() {
+                if (isDragging) {
+                    isDragging = false;
+                    canvas.style.cursor = 'grab';
+                }
+            };
+
+            canvas.addEventListener('mouseup', endDrag);
+            canvas.addEventListener('mouseleave', endDrag);
+
+            // Add wheel event listener for horizontal scrolling = panning
+            canvas.addEventListener('wheel', function(e) {
+                // If shift is held or horizontal scroll, pan instead of zoom
+                if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                    e.preventDefault();
+
+                    const xScale = modalChartInstance.scales.x;
+                    if (!xScale) return;
+
+                    // Get current scale values from options (not computed values)
+                    const currentMin = xScale.options.min !== undefined ? xScale.options.min : xScale.min;
+                    const currentMax = xScale.options.max !== undefined ? xScale.options.max : xScale.max;
+                    const range = currentMax - currentMin;
+
+                    // Get the total data range
+                    const dataMin = 0;
+                    const dataMax = modalChartInstance.data.labels.length - 1;
+
+                    // Calculate pan amount (smaller multiplier for smoother control)
+                    const panAmount = (e.deltaX || e.deltaY) * 0.05;
+
+                    // Calculate new bounds while preserving the exact range
+                    let newMin = currentMin + panAmount;
+                    let newMax = newMin + range; // Preserve exact range
+
+                    // Clamp to data boundaries while maintaining range
+                    if (newMin < dataMin) {
+                        newMin = dataMin;
+                        newMax = dataMin + range;
+                    }
+                    if (newMax > dataMax) {
+                        newMax = dataMax;
+                        newMin = dataMax - range;
+                    }
+
+                    // Apply new scale limits
+                    xScale.options.min = newMin;
+                    xScale.options.max = newMax;
+
+                    modalChartInstance.update('none');
+                    updateZoomInfo();
+                }
+                // Otherwise, let the default zoom behavior handle it
+            }, { passive: false });
         }
 
         // Switch graph tab in modal
@@ -1662,10 +2145,49 @@
         // Add keyboard navigation for graph modal
         document.getElementById('graphModal').addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                closeGraphModal();
+                // Close help overlay if it's open, otherwise close the modal
+                const helpOverlay = document.getElementById('helpOverlay');
+                if (helpOverlay && helpOverlay.classList.contains('active')) {
+                    toggleHelpOverlay();
+                } else {
+                    closeGraphModal();
+                }
+            } else if (e.key === '?') {
+                e.preventDefault();
+                toggleHelpOverlay();
             } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const newTab = currentModalTab === 'allFrames' ? 'uniqueFrames' : 'allFrames';
-                switchGraphTab(newTab);
+                // Only switch tabs if not holding Shift
+                if (!e.shiftKey) {
+                    const newTab = currentModalTab === 'allFrames' ? 'uniqueFrames' : 'allFrames';
+                    switchGraphTab(newTab);
+                }
+            } else if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key === '0' || e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                resetZoom();
+            } else if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                panLeft();
+            } else if (e.key === 'l' || e.key === 'L') {
+                e.preventDefault();
+                panRight();
+            } else if (e.key === 'j' || e.key === 'J') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key === 'k' || e.key === 'K') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                panToStart();
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                panToEnd();
             }
         });
 
@@ -1681,6 +2203,104 @@
                 loadGraphData();
             }, 500);
         };
+
+        // Toggle help overlay
+        function toggleHelpOverlay() {
+            const overlay = document.getElementById('helpOverlay');
+            overlay.classList.toggle('active');
+        }
+
+        // Close help overlay when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const helpOverlay = document.getElementById('helpOverlay');
+            if (helpOverlay) {
+                helpOverlay.addEventListener('click', function(e) {
+                    if (e.target === helpOverlay) {
+                        toggleHelpOverlay();
+                    }
+                });
+            }
+        });
     </script>
+
+    <!-- Help Overlay -->
+    <div id="helpOverlay" class="help-overlay">
+        <div class="help-content">
+            <div class="help-header">Keyboard Shortcuts</div>
+
+            <div class="help-section">
+                <div class="help-section-title">Navigation (Vim-style)</div>
+                <div class="help-shortcut">
+                    <span class="help-key">h</span>
+                    <span class="help-description">Pan left</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">l</span>
+                    <span class="help-description">Pan right</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">Home</span>
+                    <span class="help-description">Jump to start of graph</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">End</span>
+                    <span class="help-description">Jump to end of graph</span>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">Zoom</div>
+                <div class="help-shortcut">
+                    <span class="help-key">k or +</span>
+                    <span class="help-description">Zoom in</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">j or -</span>
+                    <span class="help-description">Zoom out</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">0 or r</span>
+                    <span class="help-description">Reset zoom</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">Mouse wheel</span>
+                    <span class="help-description">Zoom in/out (vertical scroll)</span>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">Mouse Controls</div>
+                <div class="help-shortcut">
+                    <span class="help-key">Drag</span>
+                    <span class="help-description">Click and drag to pan graph</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">Shift+wheel</span>
+                    <span class="help-description">Pan left/right (horizontal scroll)</span>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">Other</div>
+                <div class="help-shortcut">
+                    <span class="help-key">←/→</span>
+                    <span class="help-description">Switch between All/Unique frames</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">Esc</span>
+                    <span class="help-description">Close modal</span>
+                </div>
+                <div class="help-shortcut">
+                    <span class="help-key">?</span>
+                    <span class="help-description">Toggle this help</span>
+                </div>
+            </div>
+
+            <div class="help-footer">
+                Press ? or Esc to close • Click outside to dismiss
+            </div>
+        </div>
+    </div>
+
   </body>
 </html>

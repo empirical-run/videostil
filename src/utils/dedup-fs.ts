@@ -10,6 +10,7 @@ export async function deduplicateImageFiles({
   algo,
   fps,
   frameIndexPadding = 6,
+  diffCollector,
 }: {
   imagePaths: string[];
   threshold: number;
@@ -17,6 +18,7 @@ export async function deduplicateImageFiles({
   algo?: "gd" | "dp" | "sw";
   fps?: number;
   frameIndexPadding?: number;
+  diffCollector?: any;
 }): Promise<FrameInfo[]> {
   console.log(`[${logPrefix}] Processing ${imagePaths.length} images`);
 
@@ -73,6 +75,8 @@ export async function deduplicateImageFiles({
     threshold,
     logPrefix,
     algo,
+    diffCollector,
+    fps,
   });
 
   console.log(

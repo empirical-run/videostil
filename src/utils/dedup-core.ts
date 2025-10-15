@@ -15,6 +15,8 @@ export async function deduplicateFrames(
     algo = "gd",
     dpMaxLookback = DEDUP_CONFIG.DP_MAX_LOOKBACK,
     slidingWindowSize = DEDUP_CONFIG.SLIDING_WINDOW_SIZE,
+    diffCollector,
+    fps,
   } = options;
 
   const loader = new ImageLoader();
@@ -37,6 +39,8 @@ export async function deduplicateFrames(
           threshold,
           loader,
           logPrefix,
+          diffCollector,
+          fps,
         );
         break;
       case ALGO_MAP["dp"]:
