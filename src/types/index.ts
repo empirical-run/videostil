@@ -70,4 +70,8 @@ export interface DeduplicationOptions {
   dpMaxLookback?: number;
   /** Window size for sliding window algorithm */
   slidingWindowSize?: number;
+  /** Optional collector for frame difference data */
+  diffCollector?: any;
+  /** Frames per second (used for timestamp calculation in diff collector) */
+  fps?: number;
 }

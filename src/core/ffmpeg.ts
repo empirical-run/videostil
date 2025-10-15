@@ -10,6 +10,7 @@ import type {
 } from "../types/index.js";
 import { deduplicateImageFiles } from "../utils/dedup-fs.js";
 import { updateProgressBar, finishProgressBar } from "../utils/progress-bar.js";
+import { DiffDataCollector } from "../utils/diff-data-collector.js";
 
 const execAsync = promisify(exec);
 
@@ -337,6 +338,9 @@ export class FFmpegClient {
         throw new Error("No frames were extracted from the video");
       }
 
+      // Create collector for all frames diff data
+      const allFramesCollector = new DiffDataCollector();
+
       // Deduplicate frames
       const uniqueFrames = await deduplicateImageFiles({
         imagePaths: allFramePaths,
@@ -345,6 +349,7 @@ export class FFmpegClient {
         algo,
         fps,
         frameIndexPadding: FRAME_INDEX_PADDING,
+        diffCollector: allFramesCollector,
       });
 
       console.log(
@@ -359,6 +364,30 @@ export class FFmpegClient {
         uniqueFrames,
         absoluteWorkingDir,
       );
+
+      // Extract unique frames diff data from the all frames data
+      console.log("Extracting diff data for unique frames...");
+      const uniqueFrameIndices = new Set(uniqueFrames.map((f) => f.index));
+      const { allFrames, uniqueFrames: uniqueFramesGraphData } =
+        allFramesCollector.getFilteredGraphData(uniqueFrameIndices);
+
+      // Generate and save cache file with diff data
+      const cacheData = {
+        allFrames,
+        uniqueFrames: uniqueFramesGraphData,
+        computedAt: new Date().toISOString(),
+      };
+
+      const cacheFilePath = path.join(
+        absoluteWorkingDir,
+        "frame-diff-cache.json",
+      );
+      await fs.writeFile(
+        cacheFilePath,
+        JSON.stringify(cacheData, null, 2),
+        "utf8",
+      );
+      console.log(`Frame diff cache saved to: ${cacheFilePath}`);
 
       // Save analysis metadata
       const analysisData = {
