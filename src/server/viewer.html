@@ -993,13 +993,6 @@
               <div id="interleavedResult" class="json-content">No result</div>
             </div>
           </div>
-
-          <div class="result-section">
-            <div class="result-header">Video Info</div>
-            <div class="result-content fixed-height">
-              <div id="videoInfo" class="json-content">No result</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -1246,22 +1239,29 @@
                 const analysisItem = document.createElement('div');
                 analysisItem.className = 'analysis-item';
                 analysisItem.onclick = () => loadAnalysis(analysis.id);
-                
+
                 // Format date
                 const date = new Date(analysis.modifiedTime);
                 const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
+
+                // Get params info
+                const params = analysis.params || {};
+                const algo = params.algo || 'gd';
+                const fps = params.fps || 'N/A';
+                const threshold = params.threshold || 'N/A';
+
                 // Truncate video URL for display
                 const videoUrl = analysis.video_url || 'Unknown';
                 const displayUrl = videoUrl.length > 30 ? videoUrl.substring(0, 30) + '...' : videoUrl;
-                
+
                 analysisItem.innerHTML = `
                     <div class="analysis-item-name">${analysis.name}</div>
-                    <div class="analysis-item-info">${analysis.unique_frames_count} frames</div>
                     <div class="analysis-item-info">${displayUrl}</div>
+                    <div class="analysis-item-info">${analysis.unique_frames_count} Unique frames • algo: ${algo}</div>
+                    <div class="analysis-item-info">fps: ${fps} • threshold: ${threshold}</div>
                     <div class="analysis-item-date">${dateStr}</div>
                 `;
-                
+
                 analysesList.appendChild(analysisItem);
             });
         }
@@ -1466,16 +1466,6 @@
                 interleavedResultDiv.textContent = 'No result';
                 interleavedResultDiv.className = 'json-content';
             }
-
-            // Display video info
-            const videoInfo = {
-                url: data.video_url || 'N/A',
-                id: data.analysis_id || 'N/A',
-                model: data.params?.model || 'N/A',
-                fps: data.params?.fps || 'N/A',
-                threshold: data.params?.threshold || 'N/A'
-            };
-            document.getElementById('videoInfo').textContent = JSON.stringify(videoInfo, null, 2);
         }
 
         // REMOVED: Analysis form and file upload controls no longer exist in HTML

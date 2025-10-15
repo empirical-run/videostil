@@ -26,7 +26,6 @@ program
   .argument("<video-url>", "Video URL or path to extract frames from")
   .option("--fps <number>", "Frames per second", "25")
   .option("--threshold <number>", "Deduplication threshold", "0.01")
-  .option("--algo <string>", "Algorithm: gd|dp|sw", "gd")
   .option("--start <seconds>", "Start time in video")
   .option("--duration <seconds>", "Duration to extract")
   .option("--output <dir>", "Output directory")

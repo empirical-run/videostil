@@ -4,10 +4,10 @@ import { extractUniqueFrames, startServer, analyseFrames } from "..";
 import { checkApiKeys } from "../utils/api-keys";
 import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
+import { createHashBasedOnParams } from "../utils";
 
 const DEFAULT_FPS = 25;
 const DEFAULT_THRESHOLD = 0.01;
-const DEFAULT_ALGO = "gd";
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
 
 export async function defaultCommand(
@@ -22,7 +22,7 @@ export async function defaultCommand(
     threshold: Number.parseFloat(
       options.threshold || String(DEFAULT_THRESHOLD),
     ),
-    algo: (options.algo || DEFAULT_ALGO) as "gd" | "dp" | "sw",
+    algo: "gd" as const, // Always use greedy algorithm for now
     ...(options.start && { startTime: Number.parseInt(options.start, 10) }),
     ...(options.duration && {
       duration: Number.parseInt(options.duration, 10),
@@ -30,7 +30,15 @@ export async function defaultCommand(
     ...(options.output && { workingDir: options.output }),
   };
 
-  const result = await extractUniqueFrames(extractOptions);
+  const homeDir = process.env.HOME || process.env.USERPROFILE || process.cwd();
+  const videostilRoot = path.join(homeDir, ".videostil");
+  const videoAnalysisHash = createHashBasedOnParams(videoUrl, extractOptions);
+  const workingDir = path.join(videostilRoot, videoAnalysisHash);
+
+  const result = await extractUniqueFrames({
+    ...extractOptions,
+    workingDir,
+  });
 
   console.log("\n✓ Frame extraction complete!\n");
   console.log(`Total frames extracted: ${result.totalFramesCount}`);
@@ -94,31 +102,32 @@ export async function defaultCommand(
         }
 
         const interleavedToolResult: any[] = [];
-        
+
         for (const section of analysisResult.parsedXml) {
           interleavedToolResult.push({
             type: "text",
             text: JSON.stringify({
               key_frame: section.key_frame,
-              description: section.description
-            })
+              description: section.description,
+            }),
           });
 
           const frameNumberMatch = section.key_frame.match(/frame_(\d+)/);
-          const frameIndex = frameNumberMatch && frameNumberMatch[1]
-            ? parseInt(frameNumberMatch[1], 10)
-            : null;
+          const frameIndex =
+            frameNumberMatch && frameNumberMatch[1]
+              ? parseInt(frameNumberMatch[1], 10)
+              : null;
 
           if (frameIndex !== null) {
             const matchingFrame = result.uniqueFrames.find(
-              frame => frame.index === frameIndex
+              (frame) => frame.index === frameIndex,
             );
-            
+
             if (matchingFrame && matchingFrame.base64) {
               const imageDataUrl = `data:image/png;base64,${matchingFrame.base64}`;
               interleavedToolResult.push({
                 type: "image/png",
-                url: imageDataUrl
+                url: imageDataUrl,
               });
             }
           }

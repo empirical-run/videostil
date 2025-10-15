@@ -169,6 +169,7 @@ export async function startServer(
         video_url: analysis.data.video_url,
         analysis_id: analysis.data.analysis_id,
         unique_frames_count: analysis.data.unique_frames_count,
+        params: analysis.data.params,
       }));
 
       res.statusCode = 200;
@@ -395,19 +396,18 @@ export async function startServer(
         return;
       }
 
-      const cacheFilePath = path.join(workingDir, "frame-diff-cache.json");
+      const diffDataFilePath = path.join(workingDir, "frame-diff-data.json");
 
       try {
         // Try to read cache file
-        const cachedData = await fs.promises.readFile(cacheFilePath, "utf8");
+        const diffData = await fs.promises.readFile(diffDataFilePath, "utf8");
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
-        res.end(cachedData);
-        console.log("[frame-diff-data] Served from cache");
+        res.end(diffData);
         return;
       } catch (error) {
         // Cache file not found
-        console.error("[frame-diff-data] Cache file not found:", error);
+        console.error("[frame-diff-data] Data file not found:", error);
         res.statusCode = 404;
         res.setHeader("Content-Type", "application/json");
         res.end(

@@ -1,7 +1,6 @@
 export interface DefaultCommandOptions {
   fps: string;
   threshold: string;
-  algo: string;
   start?: string;
   duration?: string;
   output?: string;

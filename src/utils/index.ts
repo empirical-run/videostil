@@ -1,3 +1,30 @@
+import crypto from "node:crypto";
+
+export function createHashBasedOnParams(
+  mainStringToHash: string,
+  additionalParams: Record<string, any>,
+): string {
+  const sortedParams = Object.keys(additionalParams)
+    .sort()
+    .reduce(
+      (acc, key) => {
+        acc[key] = additionalParams[key as keyof typeof additionalParams];
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+  const json = JSON.stringify({
+    mainStringTohash: mainStringToHash,
+    ...sortedParams,
+  });
+  return crypto
+    .createHash("sha256")
+    .update(json)
+    .digest("hex")
+    .substring(0, 16);
+}
+
+
 export interface VideoAnalysisSection {
   key_frame: string;
   description: string;
