@@ -1,6 +1,7 @@
 import type { FrameInfo } from "../types/index.js";
 import { ImageLoader } from "./image-loader.js";
 import { areImagesDuplicate } from "./image-comparison.js";
+import { updateProgressBar, finishProgressBar } from "./progress-bar.js";
 
 export async function deduplicateImagesGreedy(
   images: FrameInfo[],
@@ -31,15 +32,17 @@ export async function deduplicateImagesGreedy(
         previousImageBuffer = currentBuffer;
       }
 
-      if ((i + 1) % 50 === 0 || i === images.length - 1) {
-        console.log(
-          `[${logPrefix}] Processed ${i + 1}/${images.length} images`,
-        );
-      }
+      updateProgressBar(
+        i + 1,
+        images.length,
+        logPrefix,
+        `| Unique: ${uniqueImages.length}`,
+      );
     } catch (error) {
-      console.error(`[${logPrefix}] Error processing image ${i + 1}:`, error);
+      console.error(`\n[${logPrefix}] Error processing image ${i + 1}:`, error);
     }
   }
 
+  finishProgressBar();
   return uniqueImages;
 }

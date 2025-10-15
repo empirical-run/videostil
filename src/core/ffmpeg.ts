@@ -9,6 +9,7 @@ import type {
   ExtractResult,
 } from "../types/index.js";
 import { deduplicateImageFiles } from "../utils/dedup-fs.js";
+import { updateProgressBar, finishProgressBar } from "../utils/progress-bar.js";
 
 const execAsync = promisify(exec);
 
@@ -26,10 +27,39 @@ export class FFmpegClient {
       execSync("ffmpeg -version", { stdio: "ignore" });
       execSync("ffprobe -version", { stdio: "ignore" });
     } catch (error) {
+      const installInstructions = this.getFFmpegInstallInstructions();
       throw new Error(
-        `ffmpeg and ffprobe are required for video processing. Please install them: ${error}`,
+        `ffmpeg and ffprobe are required but not found.\n\n${installInstructions}`,
       );
     }
+  }
+
+  private getFFmpegInstallInstructions(): string {
+    const platform = process.platform;
+    let instructions = "Please install ffmpeg:\n\n";
+
+    switch (platform) {
+      case "darwin": // macOS
+        instructions += "  macOS:\n";
+        instructions += "    brew install ffmpeg\n";
+        break;
+      case "linux":
+        instructions += "  Linux:\n";
+        instructions += "    Ubuntu/Debian: sudo apt-get install ffmpeg\n";
+        instructions += "    Fedora/RHEL:   sudo dnf install ffmpeg\n";
+        instructions += "    Arch:          sudo pacman -S ffmpeg\n";
+        break;
+      case "win32": // Windows
+        instructions += "  Windows:\n";
+        instructions += "    choco install ffmpeg\n";
+        instructions += "    or download from: https://ffmpeg.org/download.html\n";
+        break;
+      default:
+        instructions += "  Visit: https://ffmpeg.org/download.html\n";
+    }
+
+    instructions += "\nAfter installation, verify with: ffmpeg -version";
+    return instructions;
   }
 
   private async getVideoDuration(videoPath: string): Promise<number> {
@@ -205,22 +235,22 @@ export class FFmpegClient {
     // Display package identification banner
     console.log("");
     console.log(
-      "╔═══════════════════════════════════════════════════════════╗",
+      "╔═════════════════════════════════════════════════════════════════╗",
     );
     console.log(
-      "║                                                           ║",
+      "║                                                                 ║",
     );
     console.log(
-      "║   🎬 VideoStil - Video Frame Extraction for LLMs          ║",
+      "║   🎬 videostil - Bringing Video Understanding to Every LLM      ║",
     );
     console.log(
-      "║   Made with ❤️  by Empirical Team                          ║",
+      "║   Made with ❤️  by Empirical Team                               ║",
     );
     console.log(
-      "║                                                           ║",
+      "║                                                                 ║",
     );
     console.log(
-      "╚═══════════════════════════════════════════════════════════╝",
+      "╚═════════════════════════════════════════════════════════════════╝",
     );
     console.log("");
 
@@ -385,14 +415,60 @@ export class FFmpegClient {
     }
 
     if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://")) {
-      // Download from URL
-      console.log(`Downloading video from ${videoUrl}...`);
+      // Download from URL with progress bar
       const response = await fetch(videoUrl);
       if (!response.ok) {
         throw new Error(`Failed to download video: ${response.statusText}`);
       }
-      const buffer = await response.arrayBuffer();
-      await fs.writeFile(destination, Buffer.from(buffer));
+
+      const contentLength = response.headers.get("content-length");
+      const totalSize = contentLength ? parseInt(contentLength, 10) : 0;
+
+      if (!response.body) {
+        throw new Error("Response body is null");
+      }
+
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let downloadedSize = 0;
+      const startTime = Date.now();
+      const totalSizeMB = totalSize / (1024 * 1024);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        chunks.push(value);
+        downloadedSize += value.length;
+
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const speed = elapsedSeconds > 0 ? downloadedSize / elapsedSeconds : 0;
+        const speedMBps = (speed / 1024 / 1024).toFixed(1);
+        const downloadedMB = downloadedSize / (1024 * 1024);
+
+        if (totalSize > 0) {
+          updateProgressBar(
+            Math.ceil(downloadedMB * 100),
+            Math.ceil(totalSizeMB * 100),
+            "Download",
+            `${downloadedMB.toFixed(1)}/${totalSizeMB.toFixed(1)} MB @ ${speedMBps} MB/s`,
+          );
+        } else {
+          process.stdout.write(
+            `\rDownloaded: ${downloadedMB.toFixed(1)} MB @ ${speedMBps} MB/s`,
+          );
+        }
+      }
+
+      finishProgressBar();
+
+      const buffer = new Uint8Array(downloadedSize);
+      let offset = 0;
+      for (const chunk of chunks) {
+        buffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+      await fs.writeFile(destination, buffer);
       console.log(`Video downloaded to ${destination}`);
     } else {
       // Copy local file
