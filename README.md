@@ -248,7 +248,7 @@ Options:
 ├── unique_frames/             # Deduplicated frames only
 │   └── frame_000000.png
 ├── analysis-result.json       # Analysis metadata
-└── frame-diff-cache.json      # Cached similarity data
+└── frame-diff-data.json      # Cached similarity data
 ```
 
 ## Examples
