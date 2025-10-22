@@ -125,7 +125,9 @@ export async function startServer(
   // Find an available port if the requested one is not available
   const port = await findAvailablePort(requestedPort, host);
 
-  const htmlFilePath = path.join(__dirname, "viewer.html");
+  // Path to Vite build output
+  const viewerDistPath = path.join(__dirname, "..", "viewer");
+  const htmlFilePath = path.join(viewerDistPath, "index.html");
 
   // Determine root path for analyses
   // If workingDir is provided, use it directly; otherwise use ~/.videostil
@@ -421,63 +423,40 @@ export async function startServer(
       }
     }
 
+    // Serve static assets from Vite build
+    if (url.pathname.startsWith("/assets/")) {
+      const assetPath = path.join(viewerDistPath, url.pathname);
+      try {
+        const content = await fs.promises.readFile(assetPath);
+
+        // Set content type based on file extension
+        const ext = path.extname(assetPath);
+        const contentTypes: Record<string, string> = {
+          '.js': 'application/javascript',
+          '.css': 'text/css',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.svg': 'image/svg+xml',
+          '.woff': 'font/woff',
+          '.woff2': 'font/woff2',
+        };
+
+        res.statusCode = 200;
+        res.setHeader("Content-Type", contentTypes[ext] || "application/octet-stream");
+        res.setHeader("Cache-Control", "public, max-age=31536000");
+        res.end(content);
+        return;
+      } catch (error) {
+        res.statusCode = 404;
+        res.end("Asset not found");
+        return;
+      }
+    }
+
     // Serve the viewer HTML
     if (url.pathname === "/" || url.pathname === "/index.html") {
       try {
-        let htmlContent = await fs.promises.readFile(htmlFilePath, "utf8");
-
-        // Inject script to load analyses list and handle navigation
-        const injectionScript = `
-      <script>
-      // Load analyses list and set up navigation
-      window.addEventListener('DOMContentLoaded', async function() {
-        try {
-          const response = await fetch('/api/analyses');
-          const analyses = await response.json();
-
-          // Store analyses globally
-          window.currentAnalyses = analyses;
-
-          // Call the HTML implementation directly
-          if (typeof window.displayAnalysesList === 'function') {
-            window.displayAnalysesList(analyses);
-          }
-
-          // Auto-load first analysis if available
-          if (analyses.length > 0) {
-            loadAnalysis(analyses[0].id);
-          }
-        } catch (error) {
-          console.error('Error loading analyses list:', error);
-        }
-      });
-
-      function loadAnalysis(id) {
-        fetch('/api/data?id=' + encodeURIComponent(id))
-          .then(response => response.json())
-          .then(data => {
-            if (typeof window.displayData === 'function') {
-              window.displayData(data);
-            }
-            if (typeof window.setActiveAnalysis === 'function') {
-              window.setActiveAnalysis(id);
-            }
-          })
-          .catch(error => {
-            console.error('Error loading analysis:', error);
-          });
-      }
-
-      // Make loadAnalysis globally available
-      window.loadAnalysis = loadAnalysis;
-      </script>
-    `;
-
-        // Inject before closing </body> tag
-        htmlContent = htmlContent.replace(
-          "</body>",
-          `${injectionScript}</body>`,
-        );
+        const htmlContent = await fs.promises.readFile(htmlFilePath, "utf8");
 
         res.statusCode = 200;
         res.setHeader("Content-Type", "text/html; charset=utf-8");

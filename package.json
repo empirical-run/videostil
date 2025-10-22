@@ -11,13 +11,15 @@
     "videostil": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc && cp src/server/viewer.html dist/server/",
+    "build": "tsc && cd viewer && npm install && npm run build && cd ..",
+    "build:viewer": "cd viewer && npm run build && cd ..",
     "dev": "nodemon",
+    "dev:viewer": "cd viewer && npm run dev && cd ..",
     "dev:ts": "tsc --watch",
     "prepare": "npm run build && husky",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
-    "check": "biome check --write .",
+    "check": "biome check --write . --unsafe",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
