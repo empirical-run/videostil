@@ -4,10 +4,12 @@ import type { Frame } from '../types';
 interface FrameModalProps {
   frames: Frame[];
   initialIndex: number;
+  similarities: Map<number, number>;
+  allFramesDiff: Map<number, number>;
   onClose: () => void;
 }
 
-export default function FrameModal({ frames, initialIndex, onClose }: FrameModalProps) {
+export default function FrameModal({ frames, initialIndex, similarities, allFramesDiff, onClose }: FrameModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [dimensions, setDimensions] = useState<string>('Loading...');
   const filmstripRef = useRef<HTMLDivElement>(null);
@@ -72,12 +74,22 @@ export default function FrameModal({ frames, initialIndex, onClose }: FrameModal
   };
 
   const frameSize = currentFrame.size ? (currentFrame.size / 1024).toFixed(1) : 'Loading...';
+  const similarity = similarities.get(currentIndex);
+  const videoDiff = allFramesDiff.get(currentFrame.index);
+
+  const prevFrame = currentIndex > 0 ? frames[currentIndex - 1] : null;
+  const frameGap = prevFrame ? currentFrame.index - prevFrame.index : 0;
+
   const similarityPercentage =
-    currentFrame.similarityPercentage !== null && currentFrame.similarityPercentage !== undefined
-      ? `${(currentFrame.similarityPercentage * 100).toFixed(1)}%`
-      : currentIndex === 0
-        ? 'First'
-        : 'N/A';
+    currentIndex === 0
+      ? 'First'
+      : similarity !== undefined
+        ? `${(similarity * 100).toFixed(1)}%`
+        : 'Loading...';
+
+  const videoDiffPercentage = videoDiff !== undefined && videoDiff !== null
+    ? `${(videoDiff * 100).toFixed(1)}%`
+    : 'N/A';
 
   return (
     <div
@@ -94,34 +106,40 @@ export default function FrameModal({ frames, initialIndex, onClose }: FrameModal
       </button>
 
       {/* Info Panel */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/90 text-white px-6 py-4 rounded-lg z-[1001] text-center backdrop-blur-sm max-w-[600px] shadow-2xl">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/90 text-white px-6 py-4 rounded-lg z-[1001] text-center backdrop-blur-sm max-w-[700px] shadow-2xl">
         <div className="text-[13px] mb-1.5 text-white">
           Frame {currentIndex + 1} of {frames.length}
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] text-gray-200">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-[10px] text-gray-200">
           <div className="text-left">
             <span className="text-gray-400">T:</span>{' '}
             <span className="text-white">{currentFrame.timestamp || 'N/A'}</span>
           </div>
           <div className="text-left">
-            <span className="text-gray-400">Diff:</span>{' '}
-            <span className="text-red-400">{similarityPercentage}</span>
+            <span className="text-purple-400">D-Uniq:</span>{' '}
+            <span className="text-purple-300">{similarityPercentage}</span>
           </div>
+          <div className="text-left">
+            <span className="text-blue-400">D-Video:</span>{' '}
+            <span className="text-blue-300">{videoDiffPercentage}</span>
+          </div>
+          {frameGap > 1 && (
+            <div className="text-left col-span-3">
+              <span className="text-orange-400">Gap:</span>{' '}
+              <span className="text-orange-300">+{frameGap - 1} frames skipped (last unique was frame {prevFrame?.index})</span>
+            </div>
+          )}
           <div className="text-left">
             <span className="text-gray-400">Size:</span>{' '}
             <span className="text-white">{frameSize} KB</span>
           </div>
-          <div className="text-left">
-            <span className="text-gray-400">File:</span>{' '}
-            <span className="text-white">{currentFrame.fileName}</span>
-          </div>
-          <div className="text-left">
+          <div className="text-left col-span-2">
             <span className="text-gray-400">Dimensions:</span>{' '}
             <span className="text-white">{dimensions}</span>
           </div>
-          <div className="text-left">
-            <span className="text-gray-400">URL:</span>{' '}
-            <span className="text-white text-[8px] break-all">{currentFrame.url}</span>
+          <div className="text-left col-span-3">
+            <span className="text-gray-400">File:</span>{' '}
+            <span className="text-white text-[9px]">{currentFrame.fileName}</span>
           </div>
         </div>
         {currentFrame.description && (

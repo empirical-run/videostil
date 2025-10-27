@@ -28,7 +28,11 @@ Chart.register(
   zoomPlugin,
 );
 
-export default function GraphSection() {
+interface GraphSectionProps {
+  analysisId: string;
+}
+
+export default function GraphSection({ analysisId }: GraphSectionProps) {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export default function GraphSection() {
       uniqueFramesChartInstance.current?.destroy();
       modalChartInstance.current?.destroy();
     };
-  }, []);
+  }, [analysisId]);
 
   useEffect(() => {
     if (graphData) {
@@ -67,6 +71,9 @@ export default function GraphSection() {
   useEffect(() => {
     if (modalOpen && graphData) {
       renderModalGraph();
+    } else if (!modalOpen) {
+      // Reset help panel when modal closes
+      setShowHelp(false);
     }
   }, [modalOpen, activeTab, graphData]);
 
@@ -513,7 +520,10 @@ export default function GraphSection() {
           </button>
 
           <button
-            onClick={() => setShowHelp(!showHelp)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowHelp(!showHelp);
+            }}
             className="absolute top-4 left-6 text-white text-xl font-bold cursor-pointer z-[1001] hover:text-gray-300 bg-white/10 w-8 h-8 rounded-full flex items-center justify-center"
             title="Keyboard Shortcuts (press ?)"
           >

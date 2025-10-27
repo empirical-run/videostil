@@ -13,19 +13,46 @@ function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedFrameIndex, setSelectedFrameIndex] = useState<number | null>(null);
+  const [frameSimilarities, setFrameSimilarities] = useState<Map<number, number>>(new Map());
+  const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(new Map());
 
-  // Load analyses on mount
+  // Load analyses on mount and check URL for analysis ID
   useEffect(() => {
     loadAnalyses();
   }, []);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const analysisIdFromUrl = urlParams.get('id');
+
+      if (analysisIdFromUrl && analysisIdFromUrl !== currentAnalysisId) {
+        loadAnalysis(analysisIdFromUrl);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentAnalysisId]);
 
   async function loadAnalyses() {
     try {
       const data = await fetchAnalyses();
       setAnalyses(data);
 
-      // Auto-load first analysis
-      if (data.length > 0 && !currentAnalysisId) {
+      // Check URL for analysis ID
+      const urlParams = new URLSearchParams(window.location.search);
+      const analysisIdFromUrl = urlParams.get('id');
+
+      if (analysisIdFromUrl) {
+        // Load analysis from URL if it exists
+        const analysisExists = data.some(a => a.id === analysisIdFromUrl);
+        if (analysisExists && !currentAnalysisId) {
+          loadAnalysis(analysisIdFromUrl);
+        }
+      } else if (data.length > 0 && !currentAnalysisId) {
+        // Auto-load first analysis if no URL param
         loadAnalysis(data[0].id);
       }
     } catch (error) {
@@ -36,6 +63,14 @@ function App() {
   async function loadAnalysis(id: string) {
     setLoading(true);
     setCurrentAnalysisId(id);
+    // Clear stale data when switching analyses
+    setFrameSimilarities(new Map());
+    setSelectedFrameIndex(null);
+
+    // Update URL with analysis ID
+    const url = new URL(window.location.href);
+    url.searchParams.set('id', id);
+    window.history.pushState({}, '', url.toString());
 
     try {
       const data = await fetchAnalysisData(id);
@@ -57,6 +92,8 @@ function App() {
       setLoading(false);
     }
   }
+
+  console.log("analysisData --> ", analysisData)
 
   return (
     <div className="flex flex-col lg:flex-row h-screen gap-0.5 bg-gray-100 overflow-hidden">
@@ -91,12 +128,18 @@ function App() {
             : 0} MB</span>
         </div>
 
-        {analysisData && <GraphSection />}
+        {analysisData && currentAnalysisId && !loading && (
+          <GraphSection key={currentAnalysisId} analysisId={currentAnalysisId} />
+        )}
 
         <FramesGrid
           frames={analysisData?.unique_frames || []}
           loading={loading}
-          onFrameClick={setSelectedFrameIndex}
+          onFrameClick={(index, similarities, allFramesDiff) => {
+            setSelectedFrameIndex(index);
+            setFrameSimilarities(similarities);
+            setAllFramesDiff(allFramesDiff);
+          }}
         />
       </div>
 
@@ -113,6 +156,8 @@ function App() {
         <FrameModal
           frames={analysisData.unique_frames}
           initialIndex={selectedFrameIndex}
+          similarities={frameSimilarities}
+          allFramesDiff={allFramesDiff}
           onClose={() => setSelectedFrameIndex(null)}
         />
       )}

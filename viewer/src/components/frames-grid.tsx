@@ -1,21 +1,38 @@
 import { useEffect, useState } from 'react';
 import type { Frame } from '../types';
-import { fetchSimilarity } from '../lib/api';
+import { fetchSimilarity, fetchGraphData } from '../lib/api';
 
 interface FramesGridProps {
   frames: Frame[];
   loading: boolean;
-  onFrameClick: (index: number) => void;
+  onFrameClick: (index: number, similarities: Map<number, number>, allFramesDiff: Map<number, number>) => void;
 }
 
 export default function FramesGrid({ frames, loading, onFrameClick }: FramesGridProps) {
   const [similarities, setSimilarities] = useState<Map<number, number>>(new Map());
+  const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
+    // Clear similarities when frames change (new analysis loaded)
+    setSimilarities(new Map());
+    setAllFramesDiff(new Map());
+
     if (frames.length === 0) return;
 
-    // Load similarities for frames
-    const loadSimilarities = async () => {
+    // Load both similarities and graph data
+    const loadComparisonData = async () => {
+      // Load graph data to get diff with previous video frame
+      try {
+        const graphData = await fetchGraphData();
+        const diffMap = new Map(
+          graphData.allFrames.points.map(p => [p.frameIndex, p.diffFraction])
+        );
+        setAllFramesDiff(diffMap);
+      } catch (error) {
+        console.error('Error loading graph data:', error);
+      }
+
+      // Load similarities between consecutive unique frames
       for (let i = 1; i < frames.length; i++) {
         try {
           const similarity = await fetchSimilarity(
@@ -29,7 +46,7 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
       }
     };
 
-    loadSimilarities();
+    loadComparisonData();
   }, [frames]);
 
   if (loading) {
@@ -54,18 +71,27 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
         {frames.map((frame, index) => {
           const frameSize = frame.size ? (frame.size / 1024).toFixed(1) : 'Loading...';
           const similarity = similarities.get(index);
-          const diffText =
+          const videoDiff = allFramesDiff.get(frame.index);
+
+          const prevFrame = index > 0 ? frames[index - 1] : null;
+          const frameGap = prevFrame ? frame.index - prevFrame.index : 0;
+
+          const diffUniqueText =
             index === 0
               ? 'First'
               : similarity !== undefined
                 ? `${(similarity * 100).toFixed(1)}%`
                 : 'Loading...';
 
+          const diffVideoText = videoDiff !== undefined && videoDiff !== null
+            ? `${(videoDiff * 100).toFixed(1)}%`
+            : '—';
+
           return (
             <div
               key={frame.fileName}
               className="border border-gray-200 rounded overflow-hidden bg-white cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => onFrameClick(index)}
+              onClick={() => onFrameClick(index, similarities, allFramesDiff)}
             >
               <img
                 src={frame.url}
@@ -78,7 +104,11 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
               <div className="p-1 text-[8px] leading-tight bg-gray-50 border-t border-gray-100 font-bold text-black">
                 <div className="font-bold">#{index + 1}</div>
                 <div>T: {frame.timestamp || 'N/A'}</div>
-                <div className="text-red-600">Diff: {diffText}</div>
+                <div className="text-purple-600 text-[7px]">D-Uniq: {diffUniqueText}</div>
+                <div className="text-blue-600 text-[7px]">D-Video: {diffVideoText}</div>
+                {frameGap > 1 && (
+                  <div className="text-orange-600 text-[7px]">Gap: +{frameGap - 1}</div>
+                )}
                 <div className="text-gray-600 text-[7px]">{frameSize} KB</div>
                 <div className="text-gray-400 text-[7px] break-all">{frame.fileName}</div>
                 {frame.description && (
