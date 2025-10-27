@@ -1,5 +1,11 @@
 # videostil
 
+## 0.2.3
+
+### Patch Changes
+
+- ce4e48e: feat: extended max video duration to 3 hours
+
 ## 0.2.2
 
 ### Patch Changes

@@ -16,7 +16,7 @@ const execAsync = promisify(exec);
 
 const FRAME_DIMENSION = "1280:720";
 const FRAME_INDEX_PADDING = 6;
-const MAX_VIDEO_DURATION_SECONDS = 15 * 60; // 15 minutes
+const MAX_VIDEO_DURATION_SECONDS = 180 * 60; // 180 mins (3 hrs)
 
 export class FFmpegClient {
   constructor() {
