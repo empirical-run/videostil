@@ -41,3 +41,6 @@ video-analysis/
 *.mp4
 *.avi
 *.mov
+
+# Others
+.playwright-mcp
