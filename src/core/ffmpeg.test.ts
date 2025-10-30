@@ -90,8 +90,8 @@ describe("FFmpegClient", () => {
         videoUrl,
         fps: 15,
         threshold: 0.001,
-        startTime: 5,
-        duration: 10,
+        startTime: "0:05",  // 5 seconds in MM:SS format
+        duration: "0:10",   // 10 seconds in MM:SS format
         workingDir: outputDirTimed,
       });
 
@@ -120,8 +120,8 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: 100, // Video is ~26 seconds, so this should fail
-          duration: 10,
+          startTime: "1:40", // Video is ~26 seconds, so 100s (1:40) should fail
+          duration: "0:10",
           workingDir: outputDirEdge,
         }),
       ).rejects.toThrow();
@@ -132,8 +132,8 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: -5,
-          duration: 10,
+          startTime: "-0:05",
+          duration: "0:10",
           workingDir: outputDirEdge,
         }),
       ).rejects.toThrow();
@@ -144,8 +144,8 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: 5,
-          duration: 0,
+          startTime: "0:05",
+          duration: "0:00",
           workingDir: outputDirEdge,
         }),
       ).rejects.toThrow();
@@ -162,8 +162,8 @@ describe("FFmpegClient", () => {
         videoUrl,
         fps: 10,
         threshold: 0.05,
-        startTime: 0,
-        duration: 5,
+        startTime: "0:00",
+        duration: "0:05",
         algo: "dp",
         workingDir: outputDirShort,
       });
@@ -178,8 +178,8 @@ describe("FFmpegClient", () => {
       videoUrl,
       fps: 10,
       threshold: 0.1,
-      startTime: 0,
-      duration: 3,
+      startTime: "0:00",
+      duration: "0:03",
       workingDir: outputDir,
     });
 

@@ -11,6 +11,9 @@ import type {
 import { deduplicateImageFiles } from "../utils/dedup-fs.js";
 import { updateProgressBar, finishProgressBar } from "../utils/progress-bar.js";
 import { DiffDataCollector } from "../utils/diff-data-collector.js";
+import { timeStringToSeconds } from "../utils/time-converter.js";
+import { getPackageVersion } from "../utils/version.js";
+import { createBanner } from "../utils/banner.js";
 
 const execAsync = promisify(exec);
 
@@ -53,7 +56,8 @@ export class FFmpegClient {
       case "win32": // Windows
         instructions += "  Windows:\n";
         instructions += "    choco install ffmpeg\n";
-        instructions += "    or download from: https://ffmpeg.org/download.html\n";
+        instructions +=
+          "    or download from: https://ffmpeg.org/download.html\n";
         break;
       default:
         instructions += "  Visit: https://ffmpeg.org/download.html\n";
@@ -113,32 +117,32 @@ export class FFmpegClient {
     videoPath,
     outputDir,
     fps,
-    startTime = 0,
-    duration,
+    startTimeSeconds = 0,
+    durationSeconds,
   }: {
     videoPath: string;
     outputDir: string;
     fps: number;
-    startTime?: number;
-    duration?: number;
+    startTimeSeconds?: number;
+    durationSeconds?: number;
   }): Promise<string[]> {
     await fs.mkdir(outputDir, { recursive: true });
 
     console.log(
-      `Extracting frames at ${fps} fps from video${duration ? ` (${duration}s duration)` : ""} starting at ${startTime}s`,
+      `Extracting frames at ${fps} fps from video${durationSeconds ? ` (${durationSeconds}s duration)` : ""} starting at ${startTimeSeconds}s`,
     );
 
     const outputPattern = path.join(outputDir, "frame_%06d.png");
     const args = [];
 
     // Add start time if specified
-    if (startTime > 0) {
-      args.push("-ss", startTime.toString());
+    if (startTimeSeconds > 0) {
+      args.push("-ss", startTimeSeconds.toString());
     }
 
     // Add duration if specified
-    if (duration) {
-      args.push("-t", duration.toString());
+    if (durationSeconds) {
+      args.push("-t", durationSeconds.toString());
     }
 
     // Video filter for fps, scaling, and padding
@@ -163,7 +167,7 @@ export class FFmpegClient {
       const framePaths: string[] = [];
       for (let i = 0; i < frameFiles.length; i++) {
         const originalPath = path.join(outputDir, frameFiles[i]!);
-        const frameNumber = Math.floor(startTime * fps) + i;
+        const frameNumber = Math.floor(startTimeSeconds * fps) + i;
         const newFileName = `frame_${frameNumber.toString().padStart(6, "0")}.png`;
         const newPath = path.join(outputDir, newFileName);
 
@@ -238,26 +242,12 @@ export class FFmpegClient {
     }
 
     // Display package identification banner
-    console.log("");
-    console.log(
-      "╔═════════════════════════════════════════════════════════════════╗",
-    );
-    console.log(
-      "║                                                                 ║",
-    );
-    console.log(
-      "║   🎬 videostil - Bringing Video Understanding to Every LLM      ║",
-    );
-    console.log(
-      "║   Made with ❤️  by Empirical Team                                ║",
-    );
-    console.log(
-      "║                                                                 ║",
-    );
-    console.log(
-      "╚═════════════════════════════════════════════════════════════════╝",
-    );
-    console.log("");
+    const version = getPackageVersion();
+    createBanner([
+      `🎬  videostil - Bringing Video Understanding to Every LLM`,
+      "Made with ❤️  by Empirical Team",
+      `version - v${version}`,
+    ]);
 
     // Create working directory in ~/.videostil/
     const urlHash = crypto
@@ -265,7 +255,6 @@ export class FFmpegClient {
       .update(videoUrl)
       .digest("hex")
       .substring(0, 16);
-
 
     await fs.mkdir(workingDir, { recursive: true });
 
@@ -291,30 +280,48 @@ export class FFmpegClient {
       let effectiveDuration = videoDuration;
 
       if (startTime !== undefined) {
-        if (startTime < 0) {
-          throw new Error(`Start time cannot be negative: ${startTime}`);
-        }
-        if (startTime >= videoDuration) {
+        // Convert MM:SS to seconds
+        try {
+          effectiveStartTime = timeStringToSeconds(startTime);
+        } catch (error) {
           throw new Error(
-            `Start time (${startTime}s) exceeds video duration (${Math.round(videoDuration)}s)`,
+            `Invalid start time format: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
-        effectiveStartTime = startTime;
-        effectiveDuration = videoDuration - startTime;
+
+        if (effectiveStartTime < 0) {
+          throw new Error(`Start time cannot be negative: ${startTime}`);
+        }
+        if (effectiveStartTime >= videoDuration) {
+          throw new Error(
+            `Start time (${startTime} = ${effectiveStartTime}s) exceeds video duration (${Math.round(videoDuration)}s)`,
+          );
+        }
+        effectiveDuration = videoDuration - effectiveStartTime;
       }
 
       if (duration !== undefined) {
-        if (duration <= 0) {
+        // Convert MM:SS to seconds
+        let durationSeconds: number;
+        try {
+          durationSeconds = timeStringToSeconds(duration);
+        } catch (error) {
+          throw new Error(
+            `Invalid duration format: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+
+        if (durationSeconds <= 0) {
           throw new Error(`Duration must be positive: ${duration}`);
         }
         const maxAllowedDuration = videoDuration - effectiveStartTime;
-        if (duration > maxAllowedDuration) {
+        if (durationSeconds > maxAllowedDuration) {
           console.warn(
-            `Requested duration (${duration}s) exceeds available time (${maxAllowedDuration}s), truncating to fit`,
+            `Requested duration (${duration} = ${durationSeconds}s) exceeds available time (${maxAllowedDuration}s), truncating to fit`,
           );
           effectiveDuration = maxAllowedDuration;
         } else {
-          effectiveDuration = duration;
+          effectiveDuration = durationSeconds;
         }
       }
 
@@ -328,8 +335,8 @@ export class FFmpegClient {
         videoPath,
         outputDir: framesDir,
         fps,
-        startTime: effectiveStartTime,
-        duration: effectiveDuration,
+        startTimeSeconds: effectiveStartTime,
+        durationSeconds: effectiveDuration,
       });
 
       const allFramesCount = allFramePaths.length;
@@ -378,10 +385,7 @@ export class FFmpegClient {
         computedAt: new Date().toISOString(),
       };
 
-      const cacheFilePath = path.join(
-        workingDir,
-        "frame-diff-data.json",
-      );
+      const cacheFilePath = path.join(workingDir, "frame-diff-data.json");
       await fs.writeFile(
         cacheFilePath,
         JSON.stringify(cacheData, null, 2),
@@ -392,6 +396,7 @@ export class FFmpegClient {
       // Save analysis metadata
       const analysisData = {
         unique_frames_count: uniqueFrames.length,
+        totalFramesCount: allFramesCount,
         video_url: videoUrl,
         analysis_id: urlHash,
         params: {
@@ -406,10 +411,7 @@ export class FFmpegClient {
         videoDurationSeconds: videoDuration,
       };
 
-      const analysisFilePath = path.join(
-        workingDir,
-        "analysis-result.json",
-      );
+      const analysisFilePath = path.join(workingDir, "analysis-result.json");
       await fs.writeFile(
         analysisFilePath,
         JSON.stringify(analysisData, null, 2),

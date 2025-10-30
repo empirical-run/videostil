@@ -2,9 +2,10 @@ import path from "node:path";
 import fs from "node:fs";
 import { extractUniqueFrames, startServer, analyseFrames } from "..";
 import { checkApiKeys } from "../utils/api-keys";
-import type { Attachment } from "../agent/types";
+import type { Attachment, SupportedChatModels } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
 import { createHashBasedOnParams } from "../utils";
+import { calculateOptimalBatchSize } from "../agent/model-limits";
 
 const DEFAULT_FPS = 25;
 const DEFAULT_THRESHOLD = 0.01;
@@ -23,10 +24,8 @@ export async function defaultCommand(
       options.threshold || String(DEFAULT_THRESHOLD),
     ),
     algo: "gd" as const, // Always use greedy algorithm for now
-    ...(options.start && { startTime: Number.parseInt(options.start, 10) }),
-    ...(options.duration && {
-      duration: Number.parseInt(options.duration, 10),
-    }),
+    ...(options.start && { startTime: options.start }),
+    ...(options.duration && { duration: options.duration }),
     ...(options.output && { workingDir: options.output }),
   };
 
@@ -48,25 +47,27 @@ export async function defaultCommand(
   console.log(`Video duration: ${result.videoDurationSeconds.toFixed(2)}s`);
   console.log(`Output directory: ${result.uniqueFramesDir}\n`);
 
-  if (result.uniqueFrames.length > 5) {
-    console.log(`  ... and ${result.uniqueFrames.length - 5} more frames`);
-  }
+  let batchSize;
+  batchSize = await calculateOptimalBatchSize(
+    (options.model || DEFAULT_MODEL) as SupportedChatModels,
+    result.uniqueFrames,
+  );
+  const uniqueFramesBatch = result.uniqueFrames.slice(0, batchSize);
 
   const { hasKeys } = checkApiKeys();
   if (hasKeys) {
     console.log("\n🤖 Analyzing frames with LLM...\n");
 
     try {
-      const frameBatch: Attachment[] = result.uniqueFrames.map((frame) => ({
+      const frameBatch: Attachment[] = uniqueFramesBatch.map((frame) => ({
         name: frame.fileName,
         contentType: "image/png",
         base64Data: frame.base64,
       }));
 
-      console.log(`Preparing ${frameBatch.length} frames for LLM analysis...`);
+      console.log(`Sending ${frameBatch.length} frames for LLM analysis...`);
       const analysisResult = await analyseFrames({
-        selectedModel: (options.model || DEFAULT_MODEL) as any,
-        workingDirectory: result.uniqueFramesDir,
+        selectedModel: (options.model || DEFAULT_MODEL) as SupportedChatModels,
         frameBatch,
         systemPrompt: options.systemPrompt,
         initialUserPrompt: options.userPrompt,
@@ -79,7 +80,15 @@ export async function defaultCommand(
 
       console.log("\n✓ Frame analysis complete!\n");
 
-      console.log(analysisResult.analysis);
+      const allFramesLength = result.uniqueFrames.length;
+      const isTruncated = allFramesLength !== batchSize;
+
+      const finalFrameTimestamp =
+        uniqueFramesBatch[uniqueFramesBatch.length - 1]?.timestamp;
+
+      const finalAnalysis = isTruncated
+        ? `NOTE: the unique frames to be processed were truncated to ${batchSize} due to limitations on the number of frames that can be processed in a single batch. The last frame processed was at timestamp ${finalFrameTimestamp}. ${analysisResult.analysis}`
+        : analysisResult.analysis;
 
       try {
         const analysisFilePath = path.join(
@@ -135,7 +144,7 @@ export async function defaultCommand(
 
         const updatedData = {
           ...existingData,
-          analysis: analysisResult.analysis,
+          analysis: finalAnalysis,
           all_messages: analysisResult.allMessages,
           interleaved_tool_result: interleavedToolResult,
           analysis_timestamp: new Date().toISOString(),
