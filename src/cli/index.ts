@@ -30,7 +30,7 @@ program
   .option("--duration <seconds>", "Duration to extract in seconds")
   .option("--output <dir>", "Output directory")
   .option("--no-serve", "Don't start viewer after extraction")
-  .option("--model <string>", "LLM model to use for analysis")
+  .option("--model <string>", "LLM model to use for analysis", "claude-sonnet-4-20250514")
   .option("--system-prompt <string>")
   .option("--user-prompt <string>")
   .action(async (videoUrl: string, options: DefaultCommandOptions) => {

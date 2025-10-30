@@ -24,20 +24,20 @@ export interface FrameInfo {
  * Options for extracting frames from a video
  */
 export interface ExtractOptions {
-  /** Video URL or local file path */
   videoUrl: string;
-  /** Frames per second to extract (default: 30) */
-  fps?: number;
+  /** Frames per second to extract (default: 25) */
+  fps: number;
   /** Similarity threshold for deduplication (0.0-1.0, default: 0.001) */
-  threshold?: number;
+  /** Start extraction at X seconds into video */
+  threshold: number;
   /** Start extraction at specified time into video in MM:SS format (e.g., "1:30" for 1 minute 30 seconds) */
-  startTime?: string;
+  startTime: number;
   /** Extract only specified duration in seconds */
   duration?: number;
   /** Deduplication algorithm: "gd" (greedy), "dp" (dynamic programming), "sw" (sliding window) */
-  algo?: "gd" | "dp" | "sw";
+  algo: "gd" | "dp" | "sw";
   /** Absolute path to working directory for output */
-  workingDir?: string;
+  workingDir: string;
 }
 
 /**
