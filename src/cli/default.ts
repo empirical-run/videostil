@@ -23,7 +23,7 @@ export async function defaultCommand(
       options.threshold || String(DEFAULT_THRESHOLD),
     ),
     algo: "gd" as const, // Always use greedy algorithm for now
-    ...(options.start && { startTime: options.start }), // Pass as string to support MM:SS format
+    ...(options.start && { startTime: options.start }),
     ...(options.duration && {
       duration: Number.parseInt(options.duration, 10),
     }),

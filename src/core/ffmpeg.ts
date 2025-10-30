@@ -335,7 +335,7 @@ export class FFmpegClient {
 
       // Extract frames
       const framesDir = path.join(workingDir, "frames");
-      // Clean frames directory before extraction to avoid conflicts from previous runs
+      
       try {
         await fs.rm(framesDir, { recursive: true, force: true });
         console.log(`Cleaned frames directory: ${framesDir}`);

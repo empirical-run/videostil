@@ -116,7 +116,7 @@ Extract and deduplicate frames from a video.
 - `videoUrl` (string, required): Video URL or local file path
 - `fps` (number, default: 25): Frames per second to extract
 - `threshold` (number, default: 0.001): Deduplication similarity threshold (0.0-1.0)
-- `startTime` (string | number, optional): Start extraction at specified time in MM:SS format (e.g., "1:30") or seconds as number
+- `startTime` (string , optional): Start extraction at specified time in MM:SS format (e.g., "1:30")
 - `duration` (number, optional): Extract only specified duration in seconds
 - `algo` (string, default: "gd"): Deduplication algorithm
   - `"gd"` - Greedy (fastest, compares with previous frame only)
@@ -261,7 +261,7 @@ import { extractUniqueFrames } from 'videostil';
 // Extract 30 seconds starting at 1 minute
 const result = await extractUniqueFrames({
   videoUrl: 'video.mp4',
-  startTime: 60,
+  startTime: '1:00',
   duration: 30,
   fps: 30
 });

@@ -21,10 +21,6 @@ export async function deduplicateFrames(
 
   const loader = new ImageLoader();
   const approach = ALGO_MAP[algo] || DEDUP_CONFIG.DEFAULT_APPROACH;
-  // Commenting out for now since we are not using algo approach as of now
-  // console.log(
-  //   `[${logPrefix}] Starting deduplication with ${approach} approach`,
-  // );
   console.log(
     `[${logPrefix}] Input: ${frames.length} frames, Threshold: ${threshold}`,
   );
