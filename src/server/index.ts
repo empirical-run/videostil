@@ -38,6 +38,23 @@ type AnalysisData = {
   videoDurationSeconds?: number;
 };
 
+type VideoChapter = {
+  id: string;
+  startTime: number;
+  endTime: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ChapterMetadata = {
+  chapters: VideoChapter[];
+  videoDurationSeconds: number;
+  totalFramesCount: number;
+  analysisId: string;
+  version: string;
+};
+
 async function discoverAnalysisDirectories(
   rootPath: string,
 ): Promise<AnalysisDirectory[]> {
@@ -421,6 +438,171 @@ export async function startServer(
         );
         return;
       }
+    }
+
+    // API: Get chapters
+    if (url.pathname === "/api/chapters" && req.method === "GET") {
+      const analysisId = url.searchParams.get("analysisId");
+      if (!analysisId) {
+        res.statusCode = 400;
+        res.end("analysisId required");
+        return;
+      }
+
+      const chaptersPath = path.join(rootPath, analysisId, "chapters.json");
+
+      try {
+        const data = await fs.promises.readFile(chaptersPath, "utf8");
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(data);
+        return;
+      } catch {
+        // Return empty chapters if file doesn't exist
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            version: "1.0",
+            analysisId,
+            chapters: [],
+            videoDurationSeconds: 0,
+            totalFramesCount: 0,
+          }),
+        );
+        return;
+      }
+    }
+
+    // API: Create chapter
+    if (url.pathname === "/api/chapters" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", async () => {
+        try {
+          const { analysisId, chapter } = JSON.parse(body);
+          const chaptersPath = path.join(rootPath, analysisId, "chapters.json");
+
+          let metadata: ChapterMetadata;
+          try {
+            const data = await fs.promises.readFile(chaptersPath, "utf8");
+            metadata = JSON.parse(data);
+          } catch {
+            metadata = {
+              version: "1.0",
+              analysisId,
+              chapters: [],
+              videoDurationSeconds: 0,
+              totalFramesCount: 0,
+            };
+          }
+
+          metadata.chapters.push(chapter);
+          metadata.chapters.sort((a, b) => a.startTime - b.startTime);
+
+          await fs.promises.writeFile(
+            chaptersPath,
+            JSON.stringify(metadata, null, 2),
+            "utf8",
+          );
+
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ success: true, chapter }));
+        } catch (error) {
+          res.statusCode = 500;
+          res.end("Error creating chapter");
+        }
+      });
+      return;
+    }
+
+    // API: Update chapter
+    if (url.pathname.startsWith("/api/chapters/") && req.method === "PUT") {
+      const chapterId = url.pathname.substring("/api/chapters/".length);
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", async () => {
+        try {
+          const { analysisId, updates } = JSON.parse(body);
+          const chaptersPath = path.join(rootPath, analysisId, "chapters.json");
+
+          const data = await fs.promises.readFile(chaptersPath, "utf8");
+          const metadata: ChapterMetadata = JSON.parse(data);
+
+          const chapterIndex = metadata.chapters.findIndex(
+            (ch) => ch.id === chapterId,
+          );
+          if (chapterIndex === -1) {
+            res.statusCode = 404;
+            res.end("Chapter not found");
+            return;
+          }
+
+          metadata.chapters[chapterIndex] = {
+            ...metadata.chapters[chapterIndex],
+            ...updates,
+            updatedAt: new Date().toISOString(),
+          };
+
+          metadata.chapters.sort((a, b) => a.startTime - b.startTime);
+
+          await fs.promises.writeFile(
+            chaptersPath,
+            JSON.stringify(metadata, null, 2),
+            "utf8",
+          );
+
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              success: true,
+              chapter: metadata.chapters[chapterIndex],
+            }),
+          );
+        } catch (error) {
+          res.statusCode = 500;
+          res.end("Error updating chapter");
+        }
+      });
+      return;
+    }
+
+    // API: Delete chapter
+    if (url.pathname.startsWith("/api/chapters/") && req.method === "DELETE") {
+      const chapterId = url.pathname.substring("/api/chapters/".length);
+      const analysisId = url.searchParams.get("analysisId");
+
+      if (!analysisId) {
+        res.statusCode = 400;
+        res.end("analysisId required");
+        return;
+      }
+
+      try {
+        const chaptersPath = path.join(rootPath, analysisId, "chapters.json");
+        const data = await fs.promises.readFile(chaptersPath, "utf8");
+        const metadata: ChapterMetadata = JSON.parse(data);
+
+        metadata.chapters = metadata.chapters.filter(
+          (ch) => ch.id !== chapterId,
+        );
+
+        await fs.promises.writeFile(
+          chaptersPath,
+          JSON.stringify(metadata, null, 2),
+          "utf8",
+        );
+
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ success: true }));
+      } catch (error) {
+        res.statusCode = 500;
+        res.end("Error deleting chapter");
+      }
+      return;
     }
 
     // Serve static assets from Vite build

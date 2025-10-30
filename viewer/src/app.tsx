@@ -6,6 +6,7 @@ import FramesGrid from './components/frames-grid';
 import ResultsPanel from './components/results-panel';
 import FrameModal from './components/frame-modal';
 import GraphSection from './components/graph-section';
+import ChapterList from './components/chapter-list';
 
 function App() {
   const [analyses, setAnalyses] = useState<AnalysisInfo[]>([]);
@@ -130,6 +131,12 @@ function App() {
 
         {analysisData && currentAnalysisId && !loading && (
           <GraphSection key={currentAnalysisId} analysisId={currentAnalysisId} />
+        )}
+
+        {currentAnalysisId && activeTab === 'all' && (
+          <div className="px-2 pt-2">
+            <ChapterList analysisId={currentAnalysisId} />
+          </div>
         )}
 
         <FramesGrid

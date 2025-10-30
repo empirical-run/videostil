@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Frame } from '../types';
+import type { Frame, VideoChapter } from '../types';
+import { fetchChapters, createChapter, updateChapter, deleteChapter } from '../lib/api';
 
 interface FrameModalProps {
   frames: Frame[];
@@ -7,15 +8,108 @@ interface FrameModalProps {
   similarities: Map<number, number>;
   allFramesDiff: Map<number, number>;
   onClose: () => void;
+  activeTab?: 'unique' | 'all';
+  analysisId?: string;
+  fps?: number;
 }
 
-export default function FrameModal({ frames, initialIndex, similarities, allFramesDiff, onClose }: FrameModalProps) {
+export default function FrameModal({ frames, initialIndex, similarities, allFramesDiff, onClose, activeTab = 'unique', analysisId = '', fps = 25 }: FrameModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [dimensions, setDimensions] = useState<string>('Loading...');
   const filmstripRef = useRef<HTMLDivElement>(null);
   const frameRefs = useRef<(HTMLImageElement | null)[]>([]);
 
+  // Chapter state
+  const [chapters, setChapters] = useState<VideoChapter[]>([]);
+  const [markedStart, setMarkedStart] = useState<number | null>(null);
+  const [markedEnd, setMarkedEnd] = useState<number | null>(null);
+  const [chapterTitle, setChapterTitle] = useState<string>('');
+  const [editingChapter, setEditingChapter] = useState<VideoChapter | null>(null);
+
   const currentFrame = frames[currentIndex];
+
+  // Load chapters when modal opens (only for All Frames tab)
+  useEffect(() => {
+    if (activeTab === 'all' && analysisId) {
+      loadChapters();
+    }
+  }, [activeTab, analysisId]);
+
+  const loadChapters = async () => {
+    try {
+      const data = await fetchChapters(analysisId);
+      setChapters(data.chapters);
+    } catch (error) {
+      console.error('Error loading chapters:', error);
+    }
+  };
+
+  const getCurrentFrameTime = (frameIndex: number): number => {
+    return frames[frameIndex].index / fps;
+  };
+
+  const getCurrentChapter = (): VideoChapter | null => {
+    const currentTime = getCurrentFrameTime(currentIndex);
+    return chapters.find(
+      ch => currentTime >= ch.startTime && currentTime <= ch.endTime
+    ) || null;
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const markAsStart = () => {
+    const time = getCurrentFrameTime(currentIndex);
+    setMarkedStart(time);
+  };
+
+  const markAsEnd = () => {
+    const time = getCurrentFrameTime(currentIndex);
+    setMarkedEnd(time);
+  };
+
+  const clearMarks = () => {
+    setMarkedStart(null);
+    setMarkedEnd(null);
+    setChapterTitle('');
+  };
+
+  const handleCreateChapter = async () => {
+    if (!chapterTitle.trim() || markedStart === null || markedEnd === null) {
+      return;
+    }
+
+    const newChapter: VideoChapter = {
+      id: crypto.randomUUID(),
+      startTime: markedStart,
+      endTime: markedEnd,
+      title: chapterTitle.trim(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await createChapter(analysisId, newChapter);
+      await loadChapters();
+      clearMarks();
+    } catch (error) {
+      console.error('Error creating chapter:', error);
+    }
+  };
+
+  const handleDeleteChapter = async (chapterId: string) => {
+    try {
+      await deleteChapter(analysisId, chapterId);
+      await loadChapters();
+    } catch (error) {
+      console.error('Error deleting chapter:', error);
+    }
+  };
+
+  const currentChapter = getCurrentChapter();
 
   // Scroll active frame into view when currentIndex changes
   useEffect(() => {
@@ -182,6 +276,108 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
           onError={() => setDimensions('N/A')}
         />
       </div>
+
+      {/* Chapter UI - Only show in All Frames tab */}
+      {activeTab === 'all' && (
+        <div className="absolute top-1/2 right-6 -translate-y-1/2 bg-black/80 text-white p-4 rounded-lg z-[1001] max-w-[300px] max-h-[80vh] overflow-y-auto backdrop-blur-sm">
+          <h3 className="text-[12px] font-bold mb-3 border-b border-gray-600 pb-2">📖 Chapters</h3>
+
+          {/* Current Chapter Display */}
+          {currentChapter && (
+            <div className="mb-3 p-2 bg-blue-900/30 rounded border border-blue-700 text-[10px]">
+              <div className="text-blue-300 font-semibold">{currentChapter.title}</div>
+              <div className="text-gray-400 text-[9px]">
+                {formatTime(currentChapter.startTime)} - {formatTime(currentChapter.endTime)}
+              </div>
+            </div>
+          )}
+
+          {/* Mark Timestamps Panel */}
+          <div className="mb-3 p-2 bg-gray-900/50 rounded border border-gray-700">
+            <div className="text-[10px] font-semibold mb-2">📍 Mark Timestamps</div>
+            <div className="text-[9px] text-gray-400 mb-2">
+              Current: {formatTime(getCurrentFrameTime(currentIndex))}
+            </div>
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={markAsStart}
+                className="flex-1 bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-[9px] font-semibold"
+              >
+                Mark Start
+              </button>
+              <button
+                onClick={markAsEnd}
+                className="flex-1 bg-red-700 hover:bg-red-600 px-2 py-1 rounded text-[9px] font-semibold"
+              >
+                Mark End
+              </button>
+            </div>
+            {(markedStart !== null || markedEnd !== null) && (
+              <div className="text-[9px] bg-gray-800/50 p-2 rounded">
+                <div className="text-gray-400">Selected Range:</div>
+                <div>Start: {markedStart !== null ? formatTime(markedStart) : '—'}</div>
+                <div>End: {markedEnd !== null ? formatTime(markedEnd) : '—'}</div>
+                <button
+                  onClick={clearMarks}
+                  className="mt-2 w-full bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-[9px]"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Create Chapter Form */}
+          {markedStart !== null && markedEnd !== null && (
+            <div className="mb-3 p-2 bg-green-900/30 rounded border border-green-700">
+              <div className="text-[10px] font-semibold mb-2">➕ Create Chapter</div>
+              <input
+                type="text"
+                placeholder="Chapter title"
+                value={chapterTitle}
+                onChange={(e) => setChapterTitle(e.target.value)}
+                className="w-full bg-gray-800 text-white px-2 py-1 rounded text-[9px] mb-2 border border-gray-600"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="text-[9px] text-gray-400 mb-2">
+                Range: {formatTime(markedStart)} - {formatTime(markedEnd)} ({(markedEnd - markedStart).toFixed(0)}s)
+              </div>
+              <button
+                onClick={handleCreateChapter}
+                disabled={!chapterTitle.trim()}
+                className="w-full bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:cursor-not-allowed px-2 py-1 rounded text-[9px] font-semibold"
+              >
+                Create
+              </button>
+            </div>
+          )}
+
+          {/* Chapter List */}
+          <div className="text-[10px]">
+            <div className="font-semibold mb-2">📚 All Chapters ({chapters.length})</div>
+            {chapters.length === 0 ? (
+              <div className="text-gray-500 text-[9px] italic">No chapters yet</div>
+            ) : (
+              <div className="space-y-2">
+                {chapters.map(chapter => (
+                  <div key={chapter.id} className="bg-gray-800/50 p-2 rounded border border-gray-700">
+                    <div className="text-[9px] font-semibold text-white mb-1">{chapter.title}</div>
+                    <div className="text-[8px] text-gray-400 mb-2">
+                      {formatTime(chapter.startTime)} - {formatTime(chapter.endTime)}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteChapter(chapter.id)}
+                      className="w-full bg-red-800 hover:bg-red-700 px-2 py-1 rounded text-[8px]"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filmstrip */}
       <div

@@ -61,3 +61,20 @@ export interface GraphData {
   uniqueFrames: GraphDataSet;
   cached?: boolean;
 }
+
+export interface VideoChapter {
+  id: string;
+  startTime: number;
+  endTime: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChapterMetadata {
+  chapters: VideoChapter[];
+  videoDurationSeconds: number;
+  totalFramesCount: number;
+  analysisId: string;
+  version: string;
+}

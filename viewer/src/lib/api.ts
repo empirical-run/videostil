@@ -1,4 +1,4 @@
-import type { AnalysisData, AnalysisInfo, Frame, GraphData } from '../types';
+import type { AnalysisData, AnalysisInfo, Frame, GraphData, ChapterMetadata, VideoChapter } from '../types';
 
 export async function fetchAnalyses(): Promise<AnalysisInfo[]> {
   const response = await fetch('/api/analyses');
@@ -41,4 +41,58 @@ export async function fetchGraphData(): Promise<GraphData> {
     throw new Error('Failed to fetch graph data');
   }
   return response.json();
+}
+
+export async function fetchChapters(analysisId: string): Promise<ChapterMetadata> {
+  const response = await fetch(`/api/chapters?analysisId=${encodeURIComponent(analysisId)}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch chapters');
+  }
+  return response.json();
+}
+
+export async function createChapter(
+  analysisId: string,
+  chapter: VideoChapter
+): Promise<VideoChapter> {
+  const response = await fetch('/api/chapters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ analysisId, chapter }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create chapter');
+  }
+  const data = await response.json();
+  return data.chapter;
+}
+
+export async function updateChapter(
+  analysisId: string,
+  chapterId: string,
+  updates: Partial<VideoChapter>
+): Promise<VideoChapter> {
+  const response = await fetch(`/api/chapters/${chapterId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ analysisId, updates }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update chapter');
+  }
+  const data = await response.json();
+  return data.chapter;
+}
+
+export async function deleteChapter(
+  analysisId: string,
+  chapterId: string
+): Promise<void> {
+  const response = await fetch(
+    `/api/chapters/${chapterId}?analysisId=${encodeURIComponent(analysisId)}`,
+    { method: 'DELETE' }
+  );
+  if (!response.ok) {
+    throw new Error('Failed to delete chapter');
+  }
 }
