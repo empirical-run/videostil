@@ -1,11 +1,11 @@
 export interface DefaultCommandOptions {
   fps: string;
   threshold: string;
-  start?: string;
-  duration?: string;
-  output?: string;
+  start: string;
+  duration: string;
+  output: string;
   serve: boolean;
-  model?: string;
+  model: string;
   systemPrompt?: string;
   userPrompt?: string;
 }

@@ -12,13 +12,13 @@ async function getFrameAnalysisFromLLM({
   selectedModel,
   systemPrompt,
   frameBatch,
-  initialPrompt = "Analyse the frames and give me a summary at the end.",
+  initialPrompt,
   apiKeys,
 }: {
   selectedModel: SupportedChatModels;
   systemPrompt: string;
   frameBatch: Attachment[];
-  initialPrompt?: string;
+  initialPrompt: string;
   apiKeys: ApiKeysConfig;
 }): Promise<{
   analysis: string;
