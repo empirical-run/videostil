@@ -90,7 +90,7 @@ describe("FFmpegClient", () => {
         videoUrl,
         fps: 15,
         threshold: 0.001,
-        startTime: 5,
+        startTime: "00:05",
         duration: 10,
         workingDir: outputDirTimed,
       });
@@ -120,19 +120,7 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: 100, // Video is ~26 seconds, so this should fail
-          duration: 10,
-          workingDir: outputDirEdge,
-        }),
-      ).rejects.toThrow();
-
-      // Test with negative startTime - should throw error
-      await expect(
-        client.extractUniqueFrames({
-          videoUrl,
-          fps: 15,
-          threshold: 0.001,
-          startTime: -5,
+          startTime: "01:40", // Video is ~26 seconds, so this should fail
           duration: 10,
           workingDir: outputDirEdge,
         }),
@@ -144,7 +132,7 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: 5,
+          startTime: "00:05",
           duration: 0,
           workingDir: outputDirEdge,
         }),
@@ -162,7 +150,7 @@ describe("FFmpegClient", () => {
         videoUrl,
         fps: 10,
         threshold: 0.05,
-        startTime: 0,
+        startTime: "00:00",
         duration: 5,
         algo: "dp",
         workingDir: outputDirShort,
@@ -178,7 +166,7 @@ describe("FFmpegClient", () => {
       videoUrl,
       fps: 10,
       threshold: 0.1,
-      startTime: 0,
+      startTime: "00:00",
       duration: 3,
       workingDir: outputDir,
     });

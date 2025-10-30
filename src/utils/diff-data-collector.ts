@@ -36,7 +36,7 @@ export class DiffDataCollector {
   addFrameDiff(frameIndex: number, diffFraction: number, fps: number): void {
     const minutes = Math.floor(frameIndex / fps / 60);
     const seconds = Math.floor((frameIndex / fps) % 60);
-    const timestamp = `${minutes}m${seconds.toString().padStart(2, "0")}s`;
+    const timestamp = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
     this.points.push({
       frameIndex,

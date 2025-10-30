@@ -23,7 +23,7 @@ export async function defaultCommand(
       options.threshold || String(DEFAULT_THRESHOLD),
     ),
     algo: "gd" as const, // Always use greedy algorithm for now
-    ...(options.start && { startTime: Number.parseInt(options.start, 10) }),
+    ...(options.start && { startTime: options.start }), // Pass as string to support MM:SS format
     ...(options.duration && {
       duration: Number.parseInt(options.duration, 10),
     }),
@@ -66,7 +66,6 @@ export async function defaultCommand(
       console.log(`Preparing ${frameBatch.length} frames for LLM analysis...`);
       const analysisResult = await analyseFrames({
         selectedModel: (options.model || DEFAULT_MODEL) as any,
-        workingDirectory: result.uniqueFramesDir,
         frameBatch,
         systemPrompt: options.systemPrompt,
         initialUserPrompt: options.userPrompt,

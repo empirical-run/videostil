@@ -160,15 +160,15 @@ export class FFmpegClient {
         .sort();
 
       // Rename frames with absolute frame numbers based on video timestamp
-      const framePaths: string[] = [];
-      for (let i = 0; i < frameFiles.length; i++) {
+      const framePaths: string[] = new Array(frameFiles.length);
+      for (let i = frameFiles.length - 1; i >= 0; i--) {
         const originalPath = path.join(outputDir, frameFiles[i]!);
         const frameNumber = Math.floor(startTime * fps) + i;
         const newFileName = `frame_${frameNumber.toString().padStart(6, "0")}.png`;
         const newPath = path.join(outputDir, newFileName);
 
         await fs.rename(originalPath, newPath);
-        framePaths.push(newPath);
+        framePaths[i] = newPath;
       }
 
       console.log(`Successfully extracted ${framePaths.length} frames`);
@@ -286,21 +286,32 @@ export class FFmpegClient {
         );
       }
 
-      // Validate time parameters
+      // Convert string times (MM:SS) to numbers
+      const parseTime = (time: string): number => {
+        const parts = time.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0] || '0', 10);
+          const seconds = parseInt(parts[1] || '0', 10);
+          return minutes * 60 + seconds;
+        }
+        return parseFloat(time) || 0;
+      };
+
       let effectiveStartTime = 0;
       let effectiveDuration = videoDuration;
 
       if (startTime !== undefined) {
-        if (startTime < 0) {
-          throw new Error(`Start time cannot be negative: ${startTime}`);
+        const startTimeNum = parseTime(startTime);
+        if (startTimeNum < 0) {
+          throw new Error(`Start time cannot be negative: ${startTimeNum}`);
         }
-        if (startTime >= videoDuration) {
+        if (startTimeNum >= videoDuration) {
           throw new Error(
-            `Start time (${startTime}s) exceeds video duration (${Math.round(videoDuration)}s)`,
+            `Start time (${startTimeNum}s) exceeds video duration (${Math.round(videoDuration)}s)`,
           );
         }
-        effectiveStartTime = startTime;
-        effectiveDuration = videoDuration - startTime;
+        effectiveStartTime = startTimeNum;
+        effectiveDuration = videoDuration - startTimeNum;
       }
 
       if (duration !== undefined) {
@@ -324,6 +335,15 @@ export class FFmpegClient {
 
       // Extract frames
       const framesDir = path.join(workingDir, "frames");
+      // Clean frames directory before extraction to avoid conflicts from previous runs
+      try {
+        await fs.rm(framesDir, { recursive: true, force: true });
+        console.log(`Cleaned frames directory: ${framesDir}`);
+      } catch (error) {
+        console.log(`Note: Could not clean frames directory (may not exist yet): ${framesDir}`);
+      }
+      await fs.mkdir(framesDir, { recursive: true });
+      
       const allFramePaths = await this.extractFrames({
         videoPath,
         outputDir: framesDir,

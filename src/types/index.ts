@@ -16,7 +16,7 @@ export interface FrameInfo {
   url?: string;
   /** Base64-encoded image data */
   base64: string;
-  /** Human-readable timestamp (e.g., "1m23s") */
+  /** Human-readable timestamp in MM:SS format (e.g., "1:23") */
   timestamp?: string;
 }
 
@@ -30,9 +30,9 @@ export interface ExtractOptions {
   fps?: number;
   /** Similarity threshold for deduplication (0.0-1.0, default: 0.001) */
   threshold?: number;
-  /** Start extraction at X seconds into video */
-  startTime?: number;
-  /** Extract only X seconds of video */
+  /** Start extraction at specified time into video in MM:SS format (e.g., "1:30" for 1 minute 30 seconds) */
+  startTime?: string;
+  /** Extract only specified duration in seconds */
   duration?: number;
   /** Deduplication algorithm: "gd" (greedy), "dp" (dynamic programming), "sw" (sliding window) */
   algo?: "gd" | "dp" | "sw";
