@@ -84,8 +84,51 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-1">
+      {/* Video Info Section */}
+      <div className="mb-1.5 border border-gray-100 rounded overflow-hidden">
+        <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">
+          Video Info
+        </div>
+        <div className="p-1 bg-gray-50">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px]">
+            {analysisData.videoDurationSeconds !== undefined && (
+              <>
+                <div className="text-gray-600">Video Duration:</div>
+                <div className="font-mono">{formatTime(analysisData.videoDurationSeconds)}</div>
+              </>
+            )}
+            {analysisData.params?.startTime !== undefined && (
+              <>
+                <div className="text-gray-600">Start Time:</div>
+                <div className="font-mono">{formatTime(analysisData.params.startTime)}</div>
+              </>
+            )}
+            {analysisData.params?.duration !== undefined && (
+              <>
+                <div className="text-gray-600">Extract Duration:</div>
+                <div className="font-mono">{formatTime(analysisData.params.duration)}</div>
+              </>
+            )}
+            {analysisData.totalFramesCount !== undefined && (
+              <>
+                <div className="text-gray-600">Total Frames:</div>
+                <div className="font-mono">{analysisData.totalFramesCount}</div>
+              </>
+            )}
+            <div className="text-gray-600">Unique Frames:</div>
+            <div className="font-mono">{analysisData.unique_frames_count}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Analysis Section */}
       <div className="mb-1.5 border border-gray-100 rounded overflow-hidden">
         <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">

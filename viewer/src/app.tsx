@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { AnalysisData, AnalysisInfo } from './types';
-import { fetchAnalyses, fetchAnalysisData, fetchUniqueFrames } from './lib/api';
+import type { AnalysisData, AnalysisInfo, Frame } from './types';
+import { fetchAnalyses, fetchAnalysisData, fetchUniqueFrames, fetchAllFrames } from './lib/api';
 import AnalysisList from './components/analysis-list';
 import FramesGrid from './components/frames-grid';
 import ResultsPanel from './components/results-panel';
 import FrameModal from './components/frame-modal';
 import GraphSection from './components/graph-section';
+
+type FrameTab = 'unique' | 'all';
 
 function App() {
   const [analyses, setAnalyses] = useState<AnalysisInfo[]>([]);
@@ -15,6 +17,8 @@ function App() {
   const [selectedFrameIndex, setSelectedFrameIndex] = useState<number | null>(null);
   const [frameSimilarities, setFrameSimilarities] = useState<Map<number, number>>(new Map());
   const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(new Map());
+  const [activeTab, setActiveTab] = useState<FrameTab>('unique');
+  const [allFrames, setAllFrames] = useState<Frame[]>([]);
 
   // Load analyses on mount and check URL for analysis ID
   useEffect(() => {
@@ -85,6 +89,16 @@ function App() {
         // Use frames from analysis data
       }
 
+      // Try to get all frames
+      try {
+        const allFramesData = await fetchAllFrames();
+        if (allFramesData && allFramesData.length > 0) {
+          setAllFrames(allFramesData);
+        }
+      } catch {
+        console.log('All frames not available');
+      }
+
       setAnalysisData(data);
     } catch (error) {
       console.error('Error loading analysis:', error);
@@ -128,12 +142,36 @@ function App() {
             : 0} MB</span>
         </div>
 
-        {analysisData && currentAnalysisId && !loading && (
+        {/* Tabs */}
+        <div className="flex border-b border-gray-300 bg-gray-50">
+          <button
+            onClick={() => setActiveTab('unique')}
+            className={`px-3 py-1.5 text-[10px] font-semibold transition-colors ${
+              activeTab === 'unique'
+                ? 'bg-white text-[#2c3e50] border-b-2 border-[#2c3e50]'
+                : 'text-gray-600 hover:text-[#2c3e50]'
+            }`}
+          >
+            Unique Frames ({analysisData?.unique_frames?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3 py-1.5 text-[10px] font-semibold transition-colors ${
+              activeTab === 'all'
+                ? 'bg-white text-[#2c3e50] border-b-2 border-[#2c3e50]'
+                : 'text-gray-600 hover:text-[#2c3e50]'
+            }`}
+          >
+            All Frames ({allFrames.length || 0})
+          </button>
+        </div>
+
+        {analysisData && currentAnalysisId && !loading && activeTab === 'unique' && (
           <GraphSection key={currentAnalysisId} analysisId={currentAnalysisId} />
         )}
 
         <FramesGrid
-          frames={analysisData?.unique_frames || []}
+          frames={activeTab === 'unique' ? (analysisData?.unique_frames || []) : allFrames}
           loading={loading}
           onFrameClick={(index, similarities, allFramesDiff) => {
             setSelectedFrameIndex(index);
@@ -152,13 +190,16 @@ function App() {
       </div>
 
       {/* Frame Modal */}
-      {selectedFrameIndex !== null && analysisData?.unique_frames && (
+      {selectedFrameIndex !== null && (activeTab === 'unique' ? analysisData?.unique_frames : allFrames) && (
         <FrameModal
-          frames={analysisData.unique_frames}
+          frames={activeTab === 'unique' ? (analysisData?.unique_frames || []) : allFrames}
           initialIndex={selectedFrameIndex}
           similarities={frameSimilarities}
           allFramesDiff={allFramesDiff}
           onClose={() => setSelectedFrameIndex(null)}
+          activeTab={activeTab}
+          analysisId={currentAnalysisId || ''}
+          fps={analysisData?.params?.fps || 25}
         />
       )}
     </div>

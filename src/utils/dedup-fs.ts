@@ -50,7 +50,7 @@ export async function deduplicateImageFiles({
         const timeInSeconds = frameIndex / fps;
         const minutes = Math.floor(timeInSeconds / 60);
         const seconds = Math.floor(timeInSeconds % 60);
-        timestamp = `${minutes}m${seconds.toString().padStart(2, "0")}s`;
+        timestamp = `${minutes}:${seconds.toString().padStart(2, "0")}`;
       }
 
       frames.push({
