@@ -113,14 +113,14 @@ export class FFmpegClient {
     videoPath,
     outputDir,
     fps,
-    startTime = 0,
+    startTime,
     duration,
   }: {
     videoPath: string;
     outputDir: string;
     fps: number;
-    startTime?: number;
-    duration?: number;
+    startTime: number;
+    duration: number;
   }): Promise<string[]> {
     await fs.mkdir(outputDir, { recursive: true });
 
@@ -225,8 +225,8 @@ export class FFmpegClient {
   async extractUniqueFrames(options: ExtractOptions): Promise<ExtractResult> {
     const {
       videoUrl,
-      fps = 25,
-      threshold = 0.001,
+      fps,
+      threshold,
       startTime,
       duration,
       algo = "gd",
@@ -324,6 +324,15 @@ export class FFmpegClient {
 
       // Extract frames
       const framesDir = path.join(workingDir, "frames");
+
+      try {
+        await fs.rm(framesDir, { recursive: true, force: true });
+        console.log(`Cleaned frames directory: ${framesDir}`);
+      } catch (error) {
+        console.log(`Note: Could not clean frames directory (may not exist yet): ${framesDir}`);
+      }
+      await fs.mkdir(framesDir, { recursive: true });
+
       const allFramePaths = await this.extractFrames({
         videoPath,
         outputDir: framesDir,

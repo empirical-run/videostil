@@ -6,10 +6,6 @@ import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
 import { createHashBasedOnParams } from "../utils";
 
-const DEFAULT_FPS = 25;
-const DEFAULT_THRESHOLD = 0.01;
-const DEFAULT_MODEL = "claude-sonnet-4-20250514";
-
 export async function defaultCommand(
   videoUrl: string,
   options: DefaultCommandOptions,
@@ -18,12 +14,12 @@ export async function defaultCommand(
 
   const extractOptions = {
     videoUrl,
-    fps: Number.parseInt(options.fps || String(DEFAULT_FPS), 10),
+    fps: Number.parseInt(options.fps, 10),
     threshold: Number.parseFloat(
-      options.threshold || String(DEFAULT_THRESHOLD),
+      options.threshold,
     ),
     algo: "gd" as const, // Always use greedy algorithm for now
-    ...(options.start && { startTime: Number.parseInt(options.start, 10) }),
+    ...(options.start ? { startTime: Number.parseInt(options.start, 10) } : { startTime: 0 }),
     ...(options.duration && {
       duration: Number.parseInt(options.duration, 10),
     }),
@@ -65,8 +61,8 @@ export async function defaultCommand(
 
       console.log(`Preparing ${frameBatch.length} frames for LLM analysis...`);
       const analysisResult = await analyseFrames({
-        selectedModel: (options.model || DEFAULT_MODEL) as any,
         workingDirectory: result.uniqueFramesDir,
+        selectedModel: options.model as any,
         frameBatch,
         systemPrompt: options.systemPrompt,
         initialUserPrompt: options.userPrompt,
