@@ -1,6 +1,6 @@
 {
   "name": "videostil",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Convert videos into LLM-friendly input by extracting and deduplicating frames",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -67,5 +67,9 @@
     "typescript": "^5.3.0",
     "vitest": "^3.2.4"
   },
-  "files": ["dist", "README.md", "LICENSE"]
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }
