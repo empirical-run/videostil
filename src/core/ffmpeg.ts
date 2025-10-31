@@ -131,7 +131,7 @@ export class FFmpegClient {
       `Extracting frames at ${fps} fps from video${duration ? ` (${duration}s duration)` : ""} starting at ${startTime}s`,
     );
 
-    const outputPattern = path.join(outputDir, "frame_%06d.png");
+    const outputPattern = path.join(outputDir, "frame_%d.png");
     const args = [];
 
     // Add start time if specified
@@ -160,18 +160,21 @@ export class FFmpegClient {
         .filter(
           (f): f is string => f.startsWith("frame_") && f.endsWith(".png"),
         )
-        .sort();
+        .sort((a, b) => {
+          const aNum = parseInt(a.match(/frame_(\d+)\.png$/)?.[1] || "0", 10);
+          const bNum = parseInt(b.match(/frame_(\d+)\.png$/)?.[1] || "0", 10);
+          return aNum - bNum;
+        });
 
-      // Rename frames with absolute frame numbers based on video timestamp
+      const startFrameNumber = Math.floor(startTime * fps);
       const framePaths: string[] = new Array(frameFiles.length);
-      for (let i = frameFiles.length - 1; i >= 0; i--) {
+      
+      for (let i = 0; i < frameFiles.length; i++) {
         const originalPath = path.join(outputDir, frameFiles[i]!);
-        const frameNumber = Math.floor(startTime * fps) + i;
-        const newFileName = `frame_${frameNumber.toString().padStart(6, "0")}.png`;
-        const newPath = path.join(outputDir, newFileName);
-
-        await fs.rename(originalPath, newPath);
-        framePaths[i] = newPath;
+        const frameNumber = startFrameNumber + i;
+        const paddedPath = path.join(outputDir, `frame_${frameNumber.toString().padStart(6, "0")}.png`);
+        await fs.rename(originalPath, paddedPath);
+        framePaths[i] = paddedPath;
       }
 
       console.log(`Successfully extracted ${framePaths.length} frames`);
