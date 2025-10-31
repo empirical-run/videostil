@@ -1,5 +1,11 @@
 # videostil
 
+## 0.3.1
+
+### Patch Changes
+
+- f95c89e: fix: frame collision, add CLI e2e tests
+
 ## 0.3.0
 
 ### Minor Changes
