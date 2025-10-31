@@ -103,15 +103,7 @@ export class FFmpegClient {
   }): Promise<void> {
     const quotedInput = `"${inputPath}"`;
     const output = outputPath ? ` "${outputPath}"` : "";
-    
-    const quotedArgs = args.map(arg => {
-      if (arg.includes('(') || arg.includes(')') || arg.includes(':')) {
-        return `"${arg}"`;
-      }
-      return arg;
-    }).join(" ");
-    
-    const cmd = `ffmpeg -y -nostdin -i ${quotedInput} ${quotedArgs}${output}`;
+    const cmd = `ffmpeg -y -nostdin -i ${quotedInput} ${args.join(" ")}${output}`;
 
     try {
       await execAsync(cmd);
@@ -154,7 +146,7 @@ export class FFmpegClient {
 
     // Video filter for fps, scaling, and padding
     const vf = `fps=${fps},scale=${FRAME_DIMENSION}:force_original_aspect_ratio=decrease,pad=${FRAME_DIMENSION}:(ow-iw)/2:(oh-ih)/2`;
-    args.push("-vf", vf, "-q:v", "2", "-y");
+    args.push("-vf", `"${vf}"`, "-q:v", "2", "-y");
 
     try {
       await this.runFFmpegCommand({
