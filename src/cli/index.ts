@@ -26,7 +26,7 @@ program
   .argument("<video-url>", "Video URL or path to extract frames from")
   .option("--fps <number>", "Frames per second", "25")
   .option("--threshold <number>", "Deduplication threshold", "0.01")
-  .option("--start <MM:SS>", "Start time in video (format: MM:SS, e.g., 1:30)")
+  .option("--start <HH:MM:SS>", "Start time in video (format: HH:MM:SS or MM:SS, e.g., 01:30:00, 15:45)")
   .option("--duration <seconds>", "Duration to extract in seconds")
   .option("--output <dir>", "Output directory")
   .option("--no-serve", "Don't start viewer after extraction")

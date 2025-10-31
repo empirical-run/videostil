@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Frame } from '../types';
+import { formatSecondsToTimestamp } from '../utils';
 
 interface FrameModalProps {
   frames: Frame[];
@@ -113,7 +114,7 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
         <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-[10px] text-gray-200">
           <div className="text-left">
             <span className="text-gray-400">T:</span>{' '}
-            <span className="text-white">{currentFrame.timestamp || 'N/A'}</span>
+            <span className="text-white">{formatSecondsToTimestamp(parseFloat(currentFrame.timestamp)) || 'N/A'}</span>
           </div>
           <div className="text-left">
             <span className="text-purple-400">D-Uniq:</span>{' '}

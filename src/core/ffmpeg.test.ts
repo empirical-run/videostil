@@ -2,6 +2,7 @@ import * as fs from "fs";
 import path from "path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { FFmpegClient } from "./ffmpeg";
+import { formateTimestampToSeconds } from "../utils";
 
 describe("FFmpegClient", () => {
   // Using a public test video from the reference test
@@ -39,9 +40,11 @@ describe("FFmpegClient", () => {
     "should download video, extract and deduplicate frames",
     { timeout: 120000 },
     async () => {
+      const startTime = formateTimestampToSeconds("00:00:00");
       const result = await client.extractUniqueFrames({
         videoUrl,
         fps: 30,
+        startTime,
         threshold: 0.1,
         workingDir: outputDir,
       });
@@ -70,7 +73,7 @@ describe("FFmpegClient", () => {
         expect(frame.index).toBeGreaterThanOrEqual(0);
         expect(typeof frame.path).toBe("string");
         expect(fs.existsSync(frame.path)).toBeTruthy();
-        expect(typeof frame.timestamp).toBe("string");
+        expect(typeof frame.timestamp).toBe("number");
 
         // Verify it's a PNG file
         const filename = path.basename(frame.path);
@@ -84,13 +87,14 @@ describe("FFmpegClient", () => {
     { timeout: 120000 },
     async () => {
       const outputDirTimed = `${outputDir}-timed`;
+      const startTime = formateTimestampToSeconds("00:00:05");
 
       // Extract from 5 seconds for 10 seconds duration (5s to 15s)
       const result = await client.extractUniqueFrames({
         videoUrl,
         fps: 15,
         threshold: 0.001,
-        startTime: "00:05",
+        startTime,
         duration: 10,
         workingDir: outputDirTimed,
       });
@@ -120,7 +124,7 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: "01:40", // Video is ~26 seconds, so this should fail
+          startTime: 100, // Video is ~26 seconds, so this should fail
           duration: 10,
           workingDir: outputDirEdge,
         }),
@@ -132,7 +136,7 @@ describe("FFmpegClient", () => {
           videoUrl,
           fps: 15,
           threshold: 0.001,
-          startTime: "00:05",
+          startTime: 0,
           duration: 0,
           workingDir: outputDirEdge,
         }),
@@ -150,9 +154,8 @@ describe("FFmpegClient", () => {
         videoUrl,
         fps: 10,
         threshold: 0.05,
-        startTime: "00:00",
+        startTime: 0,
         duration: 5,
-        algo: "dp",
         workingDir: outputDirShort,
       });
 
@@ -166,7 +169,7 @@ describe("FFmpegClient", () => {
       videoUrl,
       fps: 10,
       threshold: 0.1,
-      startTime: "00:00",
+      startTime: 0,
       duration: 3,
       workingDir: outputDir,
     });

@@ -12,7 +12,6 @@ export async function deduplicateFrames(
     frames,
     threshold,
     logPrefix = "dedup-image",
-    algo = "gd",
     dpMaxLookback = DEDUP_CONFIG.DP_MAX_LOOKBACK,
     slidingWindowSize = DEDUP_CONFIG.SLIDING_WINDOW_SIZE,
     diffCollector,
@@ -20,7 +19,7 @@ export async function deduplicateFrames(
   } = options;
 
   const loader = new ImageLoader();
-  const approach = ALGO_MAP[algo] || DEDUP_CONFIG.DEFAULT_APPROACH;
+  const approach = DEDUP_CONFIG.DEFAULT_APPROACH;
   console.log(
     `[${logPrefix}] Input: ${frames.length} frames, Threshold: ${threshold}`,
   );

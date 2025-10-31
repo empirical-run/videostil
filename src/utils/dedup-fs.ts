@@ -45,13 +45,7 @@ export async function deduplicateImageFiles({
         .padStart(frameIndexPadding, "0");
       const normalizedFileName = `frame_${normalizedIndex}.png`;
 
-      let timestamp = "";
-      if (fps) {
-        const timeInSeconds = frameIndex / fps;
-        const minutes = Math.floor(timeInSeconds / 60);
-        const seconds = Math.floor(timeInSeconds % 60);
-        timestamp = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-      }
+      const timestamp = fps ? frameIndex / fps : undefined;
 
       frames.push({
         index: frameIndex,
@@ -74,7 +68,6 @@ export async function deduplicateImageFiles({
     frames,
     threshold,
     logPrefix,
-    algo,
     diffCollector,
     fps,
   });

@@ -4,7 +4,7 @@ import { extractUniqueFrames, startServer, analyseFrames } from "..";
 import { checkApiKeys } from "../utils/api-keys";
 import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
-import { createHashBasedOnParams } from "../utils";
+import { createHashBasedOnParams, formateTimestampToSeconds } from "../utils";
 
 export async function defaultCommand(
   videoUrl: string,
@@ -18,10 +18,9 @@ export async function defaultCommand(
     threshold: Number.parseFloat(
       options.threshold,
     ),
-    algo: "gd" as const, // Always use greedy algorithm for now
-    ...(options.start ? { startTime: Number.parseInt(options.start, 10) } : { startTime: 0 }),
+    ...(options.start ? { startTime: formateTimestampToSeconds(options.start) } : { startTime: 0 }),
     ...(options.duration && {
-      duration: Number.parseInt(options.duration, 10),
+      duration: Number.parseFloat(options.duration),
     }),
     ...(options.output && { workingDir: options.output }),
   };
@@ -61,7 +60,6 @@ export async function defaultCommand(
 
       console.log(`Preparing ${frameBatch.length} frames for LLM analysis...`);
       const analysisResult = await analyseFrames({
-        workingDirectory: result.uniqueFramesDir,
         selectedModel: options.model as any,
         frameBatch,
         systemPrompt: options.systemPrompt,

@@ -68,10 +68,11 @@ export class FFmpegClient {
 
     try {
       const { stdout } = await execAsync(command);
+      console.log(`[DEBUG] ffprobe output: "${stdout.trim()}"`);
       const duration = parseFloat(stdout.trim());
 
       if (isNaN(duration)) {
-        throw new Error("Could not determine video duration");
+        throw new Error(`Could not determine video duration. ffprobe output was: "${stdout.trim()}"`);
       }
 
       return duration;
@@ -229,7 +230,6 @@ export class FFmpegClient {
       threshold,
       startTime,
       duration,
-      algo = "gd",
       workingDir,
     } = options;
 
@@ -278,7 +278,7 @@ export class FFmpegClient {
       await this.downloadOrCopyVideo(videoUrl, videoPath);
 
       const videoDuration = await this.getVideoDuration(videoPath);
-      console.log(`Video duration: ${Math.round(videoDuration)} seconds`);
+      console.log(`Video duration: ${Math.round(videoDuration)} seconds (raw: ${videoDuration})`);
 
       if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
         throw new Error(
@@ -286,32 +286,20 @@ export class FFmpegClient {
         );
       }
 
-      // Convert string times (MM:SS) to numbers
-      const parseTime = (time: string): number => {
-        const parts = time.split(':');
-        if (parts.length === 2) {
-          const minutes = parseInt(parts[0] || '0', 10);
-          const seconds = parseInt(parts[1] || '0', 10);
-          return minutes * 60 + seconds;
-        }
-        return parseFloat(time) || 0;
-      };
-
       let effectiveStartTime = 0;
       let effectiveDuration = videoDuration;
 
       if (startTime !== undefined) {
-        const startTimeNum = parseTime(startTime);
-        if (startTimeNum < 0) {
-          throw new Error(`Start time cannot be negative: ${startTimeNum}`);
+        if (startTime < 0) {
+          throw new Error(`Start time cannot be negative: ${startTime}`);
         }
-        if (startTimeNum >= videoDuration) {
+        if (startTime >= videoDuration) {
           throw new Error(
-            `Start time (${startTimeNum}s) exceeds video duration (${Math.round(videoDuration)}s)`,
+            `Start time (${startTime}s) exceeds video duration (${Math.round(videoDuration)}s)`,
           );
         }
-        effectiveStartTime = startTimeNum;
-        effectiveDuration = videoDuration - startTimeNum;
+        effectiveStartTime = startTime;
+        effectiveDuration = videoDuration - startTime;
       }
 
       if (duration !== undefined) {
@@ -364,7 +352,6 @@ export class FFmpegClient {
         imagePaths: allFramePaths,
         threshold,
         logPrefix: "ffmpeg-frame-dedup",
-        algo,
         fps,
         frameIndexPadding: FRAME_INDEX_PADDING,
         diffCollector: allFramesCollector,
@@ -415,7 +402,6 @@ export class FFmpegClient {
         params: {
           fps,
           threshold,
-          algo,
           startTime: effectiveStartTime,
           duration: effectiveDuration,
         },
