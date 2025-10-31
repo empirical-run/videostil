@@ -4,7 +4,7 @@ export interface FrameInfo {
   fileName: string;
   url?: string;
   base64: string;
-  timestamp?: number; // seconds
+  timestamp?: number;
 }
 
 export interface ExtractOptions {

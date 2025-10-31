@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Frame } from '../types';
-import { formatSecondsToTimestamp } from '../utils';
+import { useEffect, useRef, useState } from "react";
+import type { Frame } from "../types";
+import { formatSecondsToTimestamp } from "../utils";
 
 interface FrameModalProps {
   frames: Frame[];
@@ -10,9 +10,15 @@ interface FrameModalProps {
   onClose: () => void;
 }
 
-export default function FrameModal({ frames, initialIndex, similarities, allFramesDiff, onClose }: FrameModalProps) {
+export default function FrameModal({
+  frames,
+  initialIndex,
+  similarities,
+  allFramesDiff,
+  onClose,
+}: FrameModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [dimensions, setDimensions] = useState<string>('Loading...');
+  const [dimensions, setDimensions] = useState<string>("Loading...");
   const filmstripRef = useRef<HTMLDivElement>(null);
   const frameRefs = useRef<(HTMLImageElement | null)[]>([]);
 
@@ -34,7 +40,7 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
       // Smooth scroll to center the active frame
       filmstrip.scrollBy({
         left: scrollOffset,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }, [currentIndex]);
@@ -42,23 +48,23 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
           navigatePrev();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
           navigateNext();
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           onClose();
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentIndex, frames.length, onClose]);
 
   const navigatePrev = () => {
@@ -74,7 +80,9 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
     setDimensions(`${img.naturalWidth} × ${img.naturalHeight}`);
   };
 
-  const frameSize = currentFrame.size ? (currentFrame.size / 1024).toFixed(1) : 'Loading...';
+  const frameSize = currentFrame.size
+    ? (currentFrame.size / 1024).toFixed(1)
+    : "Loading...";
   const similarity = similarities.get(currentIndex);
   const videoDiff = allFramesDiff.get(currentFrame.index);
 
@@ -83,14 +91,15 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
 
   const similarityPercentage =
     currentIndex === 0
-      ? 'First'
+      ? "First"
       : similarity !== undefined
         ? `${(similarity * 100).toFixed(1)}%`
-        : 'Loading...';
+        : "Loading...";
 
-  const videoDiffPercentage = videoDiff !== undefined && videoDiff !== null
-    ? `${(videoDiff * 100).toFixed(1)}%`
-    : 'N/A';
+  const videoDiffPercentage =
+    videoDiff !== undefined && videoDiff !== null
+      ? `${(videoDiff * 100).toFixed(1)}%`
+      : "N/A";
 
   return (
     <div
@@ -113,34 +122,42 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
         </div>
         <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-[10px] text-gray-200">
           <div className="text-left">
-            <span className="text-gray-400">T:</span>{' '}
-            <span className="text-white">{formatSecondsToTimestamp(parseFloat(currentFrame.timestamp)) || 'N/A'}</span>
+            <span className="text-gray-400">T:</span>{" "}
+            <span className="text-white">
+              {formatSecondsToTimestamp(parseFloat(currentFrame.timestamp)) ||
+                "N/A"}
+            </span>
           </div>
           <div className="text-left">
-            <span className="text-purple-400">D-Uniq:</span>{' '}
+            <span className="text-purple-400">D-Uniq:</span>{" "}
             <span className="text-purple-300">{similarityPercentage}</span>
           </div>
           <div className="text-left">
-            <span className="text-blue-400">D-Video:</span>{' '}
+            <span className="text-blue-400">D-Video:</span>{" "}
             <span className="text-blue-300">{videoDiffPercentage}</span>
           </div>
           {frameGap > 1 && (
             <div className="text-left col-span-3">
-              <span className="text-orange-400">Gap:</span>{' '}
-              <span className="text-orange-300">+{frameGap - 1} frames skipped (last unique was frame {prevFrame?.index})</span>
+              <span className="text-orange-400">Gap:</span>{" "}
+              <span className="text-orange-300">
+                +{frameGap - 1} frames skipped (last unique was frame{" "}
+                {prevFrame?.index})
+              </span>
             </div>
           )}
           <div className="text-left">
-            <span className="text-gray-400">Size:</span>{' '}
+            <span className="text-gray-400">Size:</span>{" "}
             <span className="text-white">{frameSize} KB</span>
           </div>
           <div className="text-left col-span-2">
-            <span className="text-gray-400">Dimensions:</span>{' '}
+            <span className="text-gray-400">Dimensions:</span>{" "}
             <span className="text-white">{dimensions}</span>
           </div>
           <div className="text-left col-span-3">
-            <span className="text-gray-400">File:</span>{' '}
-            <span className="text-white text-[9px]">{currentFrame.fileName}</span>
+            <span className="text-gray-400">File:</span>{" "}
+            <span className="text-white text-[9px]">
+              {currentFrame.fileName}
+            </span>
           </div>
         </div>
         {currentFrame.description && (
@@ -180,7 +197,7 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
           alt={`Frame ${currentIndex + 1}`}
           className="max-w-[90%] max-h-[70%] object-contain"
           onLoad={handleImageLoad}
-          onError={() => setDimensions('N/A')}
+          onError={() => setDimensions("N/A")}
         />
       </div>
 
@@ -199,8 +216,8 @@ export default function FrameModal({ frames, initialIndex, similarities, allFram
               w-[60px] h-[34px] border-2 rounded cursor-pointer object-cover opacity-60 transition-all flex-shrink-0
               ${
                 index === currentIndex
-                  ? 'border-blue-500 opacity-100 scale-110'
-                  : 'border-transparent hover:opacity-80'
+                  ? "border-blue-500 opacity-100 scale-110"
+                  : "border-transparent hover:opacity-80"
               }
             `}
             onClick={(e) => {

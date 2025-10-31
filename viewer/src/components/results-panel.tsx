@@ -1,4 +1,4 @@
-import type { AnalysisData } from '../types';
+import type { AnalysisData } from "../types";
 
 interface ResultsPanelProps {
   analysisData: AnalysisData | null;
@@ -20,7 +20,7 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
 
     try {
       let parsedResult = analysisData.interleaved_tool_result;
-      if (typeof parsedResult === 'string') {
+      if (typeof parsedResult === "string") {
         parsedResult = JSON.parse(parsedResult);
       }
 
@@ -28,7 +28,7 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
         return (
           <div className="space-y-3">
             {parsedResult.map((item: any, index: number) => {
-              if (item.type === 'text' && item.text) {
+              if (item.type === "text" && item.text) {
                 let frameData: { key_frame?: string; description?: string };
                 try {
                   frameData = JSON.parse(item.text);
@@ -38,14 +38,19 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
 
                 const nextItem: any = parsedResult[index + 1];
                 const imageUrl =
-                  nextItem && typeof nextItem.type === 'string' && nextItem.type.startsWith('image')
+                  nextItem &&
+                  typeof nextItem.type === "string" &&
+                  nextItem.type.startsWith("image")
                     ? nextItem.url
                     : null;
 
                 const frameIndex = Math.floor(index / 2);
 
                 return (
-                  <div key={index} className="p-1.5 border border-gray-200 rounded bg-white">
+                  <div
+                    key={index}
+                    className="p-1.5 border border-gray-200 rounded bg-white"
+                  >
                     <div className="font-bold text-[#2c3e50] mb-1 text-[10px]">
                       {frameData.key_frame || `Frame ${frameIndex + 1}`}
                     </div>
@@ -76,7 +81,7 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
     } catch (error) {
       return (
         <pre className="text-[9px] font-mono whitespace-pre-wrap break-all">
-          {typeof analysisData.interleaved_tool_result === 'string'
+          {typeof analysisData.interleaved_tool_result === "string"
             ? analysisData.interleaved_tool_result
             : JSON.stringify(analysisData.interleaved_tool_result, null, 2)}
         </pre>
@@ -93,7 +98,7 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
         </div>
         <div className="p-1 bg-gray-50 max-h-[200px] overflow-y-auto">
           <div className="text-[10px] leading-relaxed whitespace-pre-wrap">
-            {analysisData.analysis || 'No result'}
+            {analysisData.analysis || "No result"}
           </div>
         </div>
       </div>
@@ -103,7 +108,9 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
         <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">
           Interleaved Result
         </div>
-        <div className="flex-1 p-1 bg-gray-50 overflow-y-auto">{renderInterleavedResult()}</div>
+        <div className="flex-1 p-1 bg-gray-50 overflow-y-auto">
+          {renderInterleavedResult()}
+        </div>
       </div>
     </div>
   );

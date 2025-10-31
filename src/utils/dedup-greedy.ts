@@ -1,8 +1,6 @@
 import type { FrameInfo } from "../types/index.js";
 import { ImageLoader } from "./image-loader.js";
-import {
-  compareImageBuffers,
-} from "./image-comparison.js";
+import { compareImageBuffers } from "./image-comparison.js";
 import { updateProgressBar, finishProgressBar } from "./progress-bar.js";
 import { DiffDataCollector } from "./diff-data-collector.js";
 

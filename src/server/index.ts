@@ -413,7 +413,7 @@ export async function startServer(
             error: "Frame diff data not found",
             message:
               "This analysis does not have a frame diff data. Please re-run videostil to generate it.",
-          })
+          }),
         );
         return;
       }
@@ -428,17 +428,20 @@ export async function startServer(
         // Set content type based on file extension
         const ext = path.extname(assetPath);
         const contentTypes: Record<string, string> = {
-          '.js': 'application/javascript',
-          '.css': 'text/css',
-          '.png': 'image/png',
-          '.jpg': 'image/jpeg',
-          '.svg': 'image/svg+xml',
-          '.woff': 'font/woff',
-          '.woff2': 'font/woff2',
+          ".js": "application/javascript",
+          ".css": "text/css",
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".svg": "image/svg+xml",
+          ".woff": "font/woff",
+          ".woff2": "font/woff2",
         };
 
         res.statusCode = 200;
-        res.setHeader("Content-Type", contentTypes[ext] || "application/octet-stream");
+        res.setHeader(
+          "Content-Type",
+          contentTypes[ext] || "application/octet-stream",
+        );
         res.setHeader("Cache-Control", "public, max-age=31536000");
         res.end(content);
         return;

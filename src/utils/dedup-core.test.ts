@@ -117,9 +117,7 @@ describe("dedup-core", () => {
     it("should handle single frame", async () => {
       const redPath = await createTestImage("frame1.png", "red");
 
-      const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: 0 },
-      ];
+      const frames: FrameInfo[] = [{ path: redPath, index: 0, timestamp: 0 }];
 
       const result = await deduplicateFrames({
         frames,

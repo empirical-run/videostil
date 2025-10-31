@@ -53,7 +53,8 @@ export class FFmpegClient {
       case "win32": // Windows
         instructions += "  Windows:\n";
         instructions += "    choco install ffmpeg\n";
-        instructions += "    or download from: https://ffmpeg.org/download.html\n";
+        instructions +=
+          "    or download from: https://ffmpeg.org/download.html\n";
         break;
       default:
         instructions += "  Visit: https://ffmpeg.org/download.html\n";
@@ -68,11 +69,12 @@ export class FFmpegClient {
 
     try {
       const { stdout } = await execAsync(command);
-      console.log(`[DEBUG] ffprobe output: "${stdout.trim()}"`);
       const duration = parseFloat(stdout.trim());
 
       if (isNaN(duration)) {
-        throw new Error(`Could not determine video duration. ffprobe output was: "${stdout.trim()}"`);
+        throw new Error(
+          `Could not determine video duration. ffprobe output was: "${stdout.trim()}"`,
+        );
       }
 
       return duration;
@@ -224,14 +226,8 @@ export class FFmpegClient {
    * Extract unique frames from a video
    */
   async extractUniqueFrames(options: ExtractOptions): Promise<ExtractResult> {
-    const {
-      videoUrl,
-      fps,
-      threshold,
-      startTime,
-      duration,
-      workingDir,
-    } = options;
+    const { videoUrl, fps, threshold, startTime, duration, workingDir } =
+      options;
 
     if (!workingDir) {
       throw new Error("Working directory is required");
@@ -266,7 +262,6 @@ export class FFmpegClient {
       .digest("hex")
       .substring(0, 16);
 
-
     await fs.mkdir(workingDir, { recursive: true });
 
     const videoPath = path.join(workingDir, `video_${urlHash}.webm`);
@@ -278,7 +273,9 @@ export class FFmpegClient {
       await this.downloadOrCopyVideo(videoUrl, videoPath);
 
       const videoDuration = await this.getVideoDuration(videoPath);
-      console.log(`Video duration: ${Math.round(videoDuration)} seconds (raw: ${videoDuration})`);
+      console.log(
+        `Video duration: ${Math.round(videoDuration)} seconds (raw: ${videoDuration})`,
+      );
 
       if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
         throw new Error(
@@ -327,7 +324,9 @@ export class FFmpegClient {
         await fs.rm(framesDir, { recursive: true, force: true });
         console.log(`Cleaned frames directory: ${framesDir}`);
       } catch (error) {
-        console.log(`Note: Could not clean frames directory (may not exist yet): ${framesDir}`);
+        console.log(
+          `Note: Could not clean frames directory (may not exist yet): ${framesDir}`,
+        );
       }
       await fs.mkdir(framesDir, { recursive: true });
       const allFramePaths = await this.extractFrames({
@@ -383,10 +382,7 @@ export class FFmpegClient {
         computedAt: new Date().toISOString(),
       };
 
-      const cacheFilePath = path.join(
-        workingDir,
-        "frame-diff-data.json",
-      );
+      const cacheFilePath = path.join(workingDir, "frame-diff-data.json");
       await fs.writeFile(
         cacheFilePath,
         JSON.stringify(cacheData, null, 2),
@@ -410,10 +406,7 @@ export class FFmpegClient {
         videoDurationSeconds: videoDuration,
       };
 
-      const analysisFilePath = path.join(
-        workingDir,
-        "analysis-result.json",
-      );
+      const analysisFilePath = path.join(workingDir, "analysis-result.json");
       await fs.writeFile(
         analysisFilePath,
         JSON.stringify(analysisData, null, 2),

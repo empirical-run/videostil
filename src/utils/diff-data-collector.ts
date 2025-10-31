@@ -1,7 +1,7 @@
 export type FrameDiffPoint = {
   frameIndex: number;
   diffFraction: number;
-  timestamp: number; // seconds
+  timestamp: number;
 };
 
 export type DiffMetadata = {
@@ -67,7 +67,7 @@ export class DiffDataCollector {
 
     // Filter points to only include specified frames
     const uniqueFramesPoints = allFramesGraphData.points.filter((point) =>
-      frameIndices.has(point.frameIndex)
+      frameIndices.has(point.frameIndex),
     );
 
     // Recalculate metadata for unique frames subset
