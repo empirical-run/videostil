@@ -1,16 +1,29 @@
-import { useEffect, useState } from 'react';
-import type { Frame } from '../types';
-import { fetchSimilarity, fetchGraphData } from '../lib/api';
+import { useEffect, useState } from "react";
+import type { Frame } from "../types";
+import { fetchSimilarity, fetchGraphData } from "../lib/api";
+import { formatSecondsToTimestamp } from "../utils";
 
 interface FramesGridProps {
   frames: Frame[];
   loading: boolean;
-  onFrameClick: (index: number, similarities: Map<number, number>, allFramesDiff: Map<number, number>) => void;
+  onFrameClick: (
+    index: number,
+    similarities: Map<number, number>,
+    allFramesDiff: Map<number, number>,
+  ) => void;
 }
 
-export default function FramesGrid({ frames, loading, onFrameClick }: FramesGridProps) {
-  const [similarities, setSimilarities] = useState<Map<number, number>>(new Map());
-  const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(new Map());
+export default function FramesGrid({
+  frames,
+  loading,
+  onFrameClick,
+}: FramesGridProps) {
+  const [similarities, setSimilarities] = useState<Map<number, number>>(
+    new Map(),
+  );
+  const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(
+    new Map(),
+  );
 
   useEffect(() => {
     // Clear similarities when frames change (new analysis loaded)
@@ -25,11 +38,11 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
       try {
         const graphData = await fetchGraphData();
         const diffMap = new Map(
-          graphData.allFrames.points.map(p => [p.frameIndex, p.diffFraction])
+          graphData.allFrames.points.map((p) => [p.frameIndex, p.diffFraction]),
         );
         setAllFramesDiff(diffMap);
       } catch (error) {
-        console.error('Error loading graph data:', error);
+        console.error("Error loading graph data:", error);
       }
 
       // Load similarities between consecutive unique frames
@@ -37,7 +50,7 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
         try {
           const similarity = await fetchSimilarity(
             frames[i - 1].fileName,
-            frames[i].fileName
+            frames[i].fileName,
           );
           setSimilarities((prev) => new Map(prev).set(i, similarity));
         } catch (error) {
@@ -69,7 +82,9 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
     <div className="flex-1 overflow-y-auto p-1">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-1">
         {frames.map((frame, index) => {
-          const frameSize = frame.size ? (frame.size / 1024).toFixed(1) : 'Loading...';
+          const frameSize = frame.size
+            ? (frame.size / 1024).toFixed(1)
+            : "Loading...";
           const similarity = similarities.get(index);
           const videoDiff = allFramesDiff.get(frame.index);
 
@@ -78,14 +93,15 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
 
           const diffUniqueText =
             index === 0
-              ? 'First'
+              ? "First"
               : similarity !== undefined
                 ? `${(similarity * 100).toFixed(1)}%`
-                : 'Loading...';
+                : "Loading...";
 
-          const diffVideoText = videoDiff !== undefined && videoDiff !== null
-            ? `${(videoDiff * 100).toFixed(1)}%`
-            : '—';
+          const diffVideoText =
+            videoDiff !== undefined && videoDiff !== null
+              ? `${(videoDiff * 100).toFixed(1)}%`
+              : "—";
 
           return (
             <div
@@ -98,19 +114,31 @@ export default function FramesGrid({ frames, loading, onFrameClick }: FramesGrid
                 alt={`Frame ${index + 1}`}
                 className="w-full h-20 object-contain bg-gray-50"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.style.display = "none";
                 }}
               />
               <div className="p-1 text-[8px] leading-tight bg-gray-50 border-t border-gray-100 font-bold text-black">
                 <div className="font-bold">#{index + 1}</div>
-                <div>T: {frame.timestamp || 'N/A'}</div>
-                <div className="text-purple-600 text-[7px]">D-Uniq: {diffUniqueText}</div>
-                <div className="text-blue-600 text-[7px]">D-Video: {diffVideoText}</div>
+                <div>
+                  T:{" "}
+                  {formatSecondsToTimestamp(parseFloat(frame.timestamp)) ||
+                    "N/A"}
+                </div>
+                <div className="text-purple-600 text-[7px]">
+                  D-Uniq: {diffUniqueText}
+                </div>
+                <div className="text-blue-600 text-[7px]">
+                  D-Video: {diffVideoText}
+                </div>
                 {frameGap > 1 && (
-                  <div className="text-orange-600 text-[7px]">Gap: +{frameGap - 1}</div>
+                  <div className="text-orange-600 text-[7px]">
+                    Gap: +{frameGap - 1}
+                  </div>
                 )}
                 <div className="text-gray-600 text-[7px]">{frameSize} KB</div>
-                <div className="text-gray-400 text-[7px] break-all">{frame.fileName}</div>
+                <div className="text-gray-400 text-[7px] break-all">
+                  {frame.fileName}
+                </div>
                 {frame.description && (
                   <div className="text-[7px] text-gray-600 mt-0.5">
                     {frame.description.substring(0, 25)}...

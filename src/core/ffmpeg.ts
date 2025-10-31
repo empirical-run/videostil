@@ -68,10 +68,11 @@ export class FFmpegClient {
 
     try {
       const { stdout } = await execAsync(command);
+      console.log(`[DEBUG] ffprobe output: "${stdout.trim()}"`);
       const duration = parseFloat(stdout.trim());
 
       if (isNaN(duration)) {
-        throw new Error("Could not determine video duration");
+        throw new Error(`Could not determine video duration. ffprobe output was: "${stdout.trim()}"`);
       }
 
       return duration;
@@ -160,15 +161,15 @@ export class FFmpegClient {
         .sort();
 
       // Rename frames with absolute frame numbers based on video timestamp
-      const framePaths: string[] = [];
-      for (let i = 0; i < frameFiles.length; i++) {
+      const framePaths: string[] = new Array(frameFiles.length);
+      for (let i = frameFiles.length - 1; i >= 0; i--) {
         const originalPath = path.join(outputDir, frameFiles[i]!);
         const frameNumber = Math.floor(startTime * fps) + i;
         const newFileName = `frame_${frameNumber.toString().padStart(6, "0")}.png`;
         const newPath = path.join(outputDir, newFileName);
 
         await fs.rename(originalPath, newPath);
-        framePaths.push(newPath);
+        framePaths[i] = newPath;
       }
 
       console.log(`Successfully extracted ${framePaths.length} frames`);
@@ -229,7 +230,6 @@ export class FFmpegClient {
       threshold,
       startTime,
       duration,
-      algo = "gd",
       workingDir,
     } = options;
 
@@ -278,7 +278,7 @@ export class FFmpegClient {
       await this.downloadOrCopyVideo(videoUrl, videoPath);
 
       const videoDuration = await this.getVideoDuration(videoPath);
-      console.log(`Video duration: ${Math.round(videoDuration)} seconds`);
+      console.log(`Video duration: ${Math.round(videoDuration)} seconds (raw: ${videoDuration})`);
 
       if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
         throw new Error(
@@ -286,7 +286,6 @@ export class FFmpegClient {
         );
       }
 
-      // Validate time parameters
       let effectiveStartTime = 0;
       let effectiveDuration = videoDuration;
 
@@ -324,7 +323,6 @@ export class FFmpegClient {
 
       // Extract frames
       const framesDir = path.join(workingDir, "frames");
-
       try {
         await fs.rm(framesDir, { recursive: true, force: true });
         console.log(`Cleaned frames directory: ${framesDir}`);
@@ -332,7 +330,6 @@ export class FFmpegClient {
         console.log(`Note: Could not clean frames directory (may not exist yet): ${framesDir}`);
       }
       await fs.mkdir(framesDir, { recursive: true });
-
       const allFramePaths = await this.extractFrames({
         videoPath,
         outputDir: framesDir,
@@ -355,7 +352,6 @@ export class FFmpegClient {
         imagePaths: allFramePaths,
         threshold,
         logPrefix: "ffmpeg-frame-dedup",
-        algo,
         fps,
         frameIndexPadding: FRAME_INDEX_PADDING,
         diffCollector: allFramesCollector,
@@ -406,7 +402,6 @@ export class FFmpegClient {
         params: {
           fps,
           threshold,
-          algo,
           startTime: effectiveStartTime,
           duration: effectiveDuration,
         },

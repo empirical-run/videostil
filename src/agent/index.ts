@@ -86,14 +86,12 @@ export interface AnalyseFramesResult {
 
 export async function analyseFrames({
   selectedModel,
-  workingDirectory,
   frameBatch,
   systemPrompt,
   initialUserPrompt,
   apiKeys,
 }: {
   selectedModel: SupportedChatModels;
-  workingDirectory: string;
   frameBatch: Attachment[];
   systemPrompt?: string;
   initialUserPrompt?: string;

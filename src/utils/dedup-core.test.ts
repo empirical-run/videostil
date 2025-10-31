@@ -53,15 +53,14 @@ describe("dedup-core", () => {
       const greenPath = await createTestImage("frame3.png", "green");
 
       const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: "0s" },
-        { path: bluePath, index: 1, timestamp: "1s" },
-        { path: greenPath, index: 2, timestamp: "2s" },
+        { path: redPath, index: 0, timestamp: 0 },
+        { path: bluePath, index: 1, timestamp: 1 },
+        { path: greenPath, index: 2, timestamp: 2 },
       ];
 
       const result = await deduplicateFrames({
         frames,
         threshold: 0.001, // Low threshold means stricter duplicate detection
-        algo: "gd",
       });
 
       expect(result.length).toBe(3); // All frames should be kept
@@ -73,15 +72,14 @@ describe("dedup-core", () => {
       const redPath3 = await createTestImage("frame3.png", "red");
 
       const frames: FrameInfo[] = [
-        { path: redPath1, index: 0, timestamp: "0s" },
-        { path: redPath2, index: 1, timestamp: "1s" },
-        { path: redPath3, index: 2, timestamp: "2s" },
+        { path: redPath1, index: 0, timestamp: 0 },
+        { path: redPath2, index: 1, timestamp: 1 },
+        { path: redPath3, index: 2, timestamp: 2 },
       ];
 
       const result = await deduplicateFrames({
         frames,
         threshold: 0.001,
-        algo: "gd",
       });
 
       expect(result.length).toBe(1); // Only the first frame should be kept
@@ -93,57 +91,16 @@ describe("dedup-core", () => {
       const bluePath = await createTestImage("frame2.png", "blue");
 
       const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: "0s" },
-        { path: bluePath, index: 1, timestamp: "1s" },
+        { path: redPath, index: 0, timestamp: 0 },
+        { path: bluePath, index: 1, timestamp: 1 },
       ];
 
       const result = await deduplicateFrames({
         frames,
         threshold: 1.0, // High threshold means everything is a duplicate
-        algo: "gd",
       });
 
       expect(result.length).toBe(1); // Only first frame kept
-    });
-  });
-
-  describe("deduplicateFrames with different algorithms", () => {
-    it("should work with dynamic programming algorithm", async () => {
-      const redPath = await createTestImage("frame1.png", "red");
-      const bluePath = await createTestImage("frame2.png", "blue");
-
-      const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: "0s" },
-        { path: bluePath, index: 1, timestamp: "1s" },
-      ];
-
-      const result = await deduplicateFrames({
-        frames,
-        threshold: 0.001,
-        algo: "dp",
-        dpMaxLookback: 5,
-      });
-
-      expect(result.length).toBe(2);
-    });
-
-    it("should work with sliding window algorithm", async () => {
-      const redPath = await createTestImage("frame1.png", "red");
-      const bluePath = await createTestImage("frame2.png", "blue");
-
-      const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: "0s" },
-        { path: bluePath, index: 1, timestamp: "1s" },
-      ];
-
-      const result = await deduplicateFrames({
-        frames,
-        threshold: 0.001,
-        algo: "sw",
-        slidingWindowSize: 3,
-      });
-
-      expect(result.length).toBe(2);
     });
   });
 
@@ -152,7 +109,6 @@ describe("dedup-core", () => {
       const result = await deduplicateFrames({
         frames: [],
         threshold: 0.001,
-        algo: "gd",
       });
 
       expect(result).toEqual([]);
@@ -162,13 +118,12 @@ describe("dedup-core", () => {
       const redPath = await createTestImage("frame1.png", "red");
 
       const frames: FrameInfo[] = [
-        { path: redPath, index: 0, timestamp: "0s" },
+        { path: redPath, index: 0, timestamp: 0 },
       ];
 
       const result = await deduplicateFrames({
         frames,
         threshold: 0.001,
-        algo: "gd",
       });
 
       expect(result.length).toBe(1);
