@@ -1,4 +1,4 @@
-import type { AnalysisInfo } from '../types';
+import type { AnalysisInfo } from "../types";
 
 interface AnalysisListProps {
   analyses: AnalysisInfo[];
@@ -24,18 +24,22 @@ export default function AnalysisList({
       <div className="space-y-1">
         {analyses.map((analysis) => {
           const date = new Date(analysis.modifiedTime);
-          const dateStr = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}`;
+          const dateStr = `${date.toLocaleDateString()} ${date.toLocaleTimeString(
+            [],
+            {
+              hour: "2-digit",
+              minute: "2-digit",
+            },
+          )}`;
 
           const params = analysis.params || {};
-          const algo = params.algo || 'gd';
-          const fps = params.fps || 'N/A';
-          const threshold = params.threshold || 'N/A';
+          const algo = params.algo || "gd";
+          const fps = params.fps || "N/A";
+          const threshold = params.threshold || "N/A";
 
-          const videoUrl = analysis.video_url || 'Unknown';
-          const displayUrl = videoUrl.length > 30 ? videoUrl.substring(0, 30) + '...' : videoUrl;
+          const videoUrl = analysis.video_url || "Unknown";
+          const displayUrl =
+            videoUrl.length > 30 ? videoUrl.substring(0, 30) + "..." : videoUrl;
 
           const isActive = analysis.id === currentAnalysisId;
 
@@ -47,13 +51,17 @@ export default function AnalysisList({
                 p-1.5 mb-1 border rounded cursor-pointer transition-colors
                 ${
                   isActive
-                    ? 'bg-blue-50 border-blue-400'
-                    : 'bg-white border-gray-200 hover:bg-blue-50'
+                    ? "bg-blue-50 border-blue-400"
+                    : "bg-white border-gray-200 hover:bg-blue-50"
                 }
               `}
             >
-              <div className="font-bold text-[9px] text-[#2c3e50] mb-0.5">{analysis.name}</div>
-              <div className="text-[8px] text-gray-600 leading-tight">{displayUrl}</div>
+              <div className="font-bold text-[9px] text-[#2c3e50] mb-0.5">
+                {analysis.name}
+              </div>
+              <div className="text-[8px] text-gray-600 leading-tight">
+                {displayUrl}
+              </div>
               <div className="text-[8px] text-gray-600 leading-tight">
                 {analysis.unique_frames_count} Unique frames • algo: {algo}
               </div>

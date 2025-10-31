@@ -15,10 +15,10 @@ export async function defaultCommand(
   const extractOptions = {
     videoUrl,
     fps: Number.parseInt(options.fps, 10),
-    threshold: Number.parseFloat(
-      options.threshold,
-    ),
-    ...(options.start ? { startTime: formatTimestampToSeconds(options.start) } : { startTime: 0 }),
+    threshold: Number.parseFloat(options.threshold),
+    ...(options.start
+      ? { startTime: formatTimestampToSeconds(options.start) }
+      : { startTime: 0 }),
     ...(options.duration && {
       duration: Number.parseFloat(options.duration),
     }),

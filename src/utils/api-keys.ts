@@ -4,9 +4,10 @@ export interface ApiKeysConfig {
   OPENAI_API_KEY?: string;
 }
 
-export function checkApiKeys(
-  providedKeys?: ApiKeysConfig,
-): { hasKeys: boolean; keys: ApiKeysConfig } {
+export function checkApiKeys(providedKeys?: ApiKeysConfig): {
+  hasKeys: boolean;
+  keys: ApiKeysConfig;
+} {
   const keys: ApiKeysConfig = {
     ANTHROPIC_API_KEY:
       providedKeys?.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
