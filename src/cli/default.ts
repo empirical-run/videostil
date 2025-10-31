@@ -4,7 +4,7 @@ import { extractUniqueFrames, startServer, analyseFrames } from "..";
 import { checkApiKeys } from "../utils/api-keys";
 import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
-import { createHashBasedOnParams, formateTimestampToSeconds } from "../utils";
+import { createHashBasedOnParams, formatTimestampToSeconds } from "../utils";
 
 export async function defaultCommand(
   videoUrl: string,
@@ -18,7 +18,7 @@ export async function defaultCommand(
     threshold: Number.parseFloat(
       options.threshold,
     ),
-    ...(options.start ? { startTime: formateTimestampToSeconds(options.start) } : { startTime: 0 }),
+    ...(options.start ? { startTime: formatTimestampToSeconds(options.start) } : { startTime: 0 }),
     ...(options.duration && {
       duration: Number.parseFloat(options.duration),
     }),

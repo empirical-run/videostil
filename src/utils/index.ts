@@ -13,7 +13,7 @@ export function formatSecondsToTimestamp(seconds: number | undefined): string {
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function formateTimestampToSeconds(timestamp: string): number {
+export function formatTimestampToSeconds(timestamp: string): number {
   try {
     const parts = timestamp.split(':').map((value) => parseFloat(value));
     

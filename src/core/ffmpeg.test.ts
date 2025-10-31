@@ -2,7 +2,7 @@ import * as fs from "fs";
 import path from "path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { FFmpegClient } from "./ffmpeg";
-import { formateTimestampToSeconds } from "../utils";
+import { formatTimestampToSeconds } from "../utils";
 
 describe("FFmpegClient", () => {
   // Using a public test video from the reference test
@@ -40,7 +40,7 @@ describe("FFmpegClient", () => {
     "should download video, extract and deduplicate frames",
     { timeout: 120000 },
     async () => {
-      const startTime = formateTimestampToSeconds("00:00:00");
+      const startTime = formatTimestampToSeconds("00:00:00");
       const result = await client.extractUniqueFrames({
         videoUrl,
         fps: 30,
@@ -87,7 +87,7 @@ describe("FFmpegClient", () => {
     { timeout: 120000 },
     async () => {
       const outputDirTimed = `${outputDir}-timed`;
-      const startTime = formateTimestampToSeconds("00:00:05");
+      const startTime = formatTimestampToSeconds("00:00:05");
 
       // Extract from 5 seconds for 10 seconds duration (5s to 15s)
       const result = await client.extractUniqueFrames({
