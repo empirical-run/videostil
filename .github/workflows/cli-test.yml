@@ -23,7 +23,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+
+      - name: Install FFmpeg
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install ffmpeg
+          fi
+          ffmpeg -version
+        shell: bash
+
       - name: Install dependencies
         run: npm install
       
