@@ -1,4 +1,5 @@
 import type { AnalysisData } from "../types";
+import { formatSecondsToTimestamp } from "../utils";
 
 interface ResultsPanelProps {
   analysisData: AnalysisData | null;
@@ -89,28 +90,19 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-1">
-      {/* Info Section */}
       <div className="mb-1.5 border border-gray-100 rounded overflow-hidden">
         <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">
           Info
         </div>
         <div className="p-1 bg-gray-50">
           <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px]">
-            {/* Analysis ID */}
             <div className="text-gray-600">Analysis ID:</div>
             <div className="font-mono text-[8px] truncate" title={analysisData.analysis_id}>
               {analysisData.analysis_id}
             </div>
 
-            {/* Video URL */}
             {analysisData.video_url && (
               <>
                 <div className="text-gray-600">Video URL:</div>
@@ -127,29 +119,26 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
               </>
             )}
 
-            {/* Video Duration */}
             {analysisData.videoDurationSeconds !== undefined && (
               <>
                 <div className="text-gray-600">Video Duration:</div>
-                <div className="font-mono">{formatTime(analysisData.videoDurationSeconds)}</div>
+                <div className="font-mono">{formatSecondsToTimestamp(analysisData.videoDurationSeconds)}</div>
               </>
             )}
 
-            {/* Extraction Parameters */}
             {analysisData.params?.startTime !== undefined && (
               <>
                 <div className="text-gray-600">Start Time:</div>
-                <div className="font-mono">{formatTime(analysisData.params.startTime)}</div>
+                <div className="font-mono">{formatSecondsToTimestamp(analysisData.params.startTime)}</div>
               </>
             )}
             {analysisData.params?.duration !== undefined && (
               <>
                 <div className="text-gray-600">Extract Duration:</div>
-                <div className="font-mono">{formatTime(analysisData.params.duration)}</div>
+                <div className="font-mono">{formatSecondsToTimestamp(analysisData.params.duration)}</div>
               </>
             )}
 
-            {/* Frame Counts */}
             {analysisData.totalFramesCount !== undefined && (
               <>
                 <div className="text-gray-600">Total Frames:</div>
@@ -159,7 +148,6 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
             <div className="text-gray-600">Unique Frames:</div>
             <div className="font-mono">{analysisData.unique_frames_count}</div>
 
-            {/* Algorithm Parameters */}
             {analysisData.params?.algo && (
               <>
                 <div className="text-gray-600">Algorithm:</div>
@@ -182,7 +170,6 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
         </div>
       </div>
 
-      {/* Analysis Section */}
       <div className="mb-1.5 border border-gray-100 rounded overflow-hidden">
         <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">
           Analysis
@@ -194,7 +181,6 @@ export default function ResultsPanel({ analysisData }: ResultsPanelProps) {
         </div>
       </div>
 
-      {/* Interleaved Result Section */}
       <div className="flex-1 border border-gray-100 rounded overflow-hidden flex flex-col min-h-0">
         <div className="bg-gray-100 px-1 py-0.5 text-[9px] font-bold border-b border-gray-100">
           Interleaved Result

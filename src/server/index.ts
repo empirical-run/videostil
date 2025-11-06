@@ -260,11 +260,7 @@ export async function startServer(
               path: filename,
               fileName: filename,
               url: `/api/all-frame/${encodeURIComponent(filename)}`,
-              timestamp: `${Math.floor(parseInt(frameNumber) / fps / 60)}:${Math.floor(
-                (parseInt(frameNumber) / fps) % 60,
-              )
-                .toString()
-                .padStart(2, "0")}`,
+              timestamp: parseInt(frameNumber) / fps,
               size: stat.size,
               similarityPercentage: null,
             };
