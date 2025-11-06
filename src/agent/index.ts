@@ -6,7 +6,7 @@ import type {
 } from "./types";
 import { VIDEO_ANALYSIS_SYSTEM_PROMPT } from "./constants";
 import { parseXmlSummaryToJson, VideoAnalysisSection } from "../utils";
-import { requireApiKeys, type ApiKeysConfig } from "../utils/api-keys";
+import type { ApiKeysConfig } from "../utils/api-keys";
 
 async function getFrameAnalysisFromLLM({
   selectedModel,
@@ -97,8 +97,6 @@ export async function analyseFrames({
   initialUserPrompt?: string;
   apiKeys?: ApiKeysConfig;
 }): Promise<AnalyseFramesResult> {
-  requireApiKeys(apiKeys);
-
   const { analysis: rawAnalysis, allMessages } = await getFrameAnalysisFromLLM({
     selectedModel,
     systemPrompt: systemPrompt ? systemPrompt : VIDEO_ANALYSIS_SYSTEM_PROMPT,

@@ -1,16 +1,19 @@
 import path from "node:path";
 import fs from "node:fs";
-import { extractUniqueFrames, startServer, analyseFrames } from "..";
+import { startServer} from "../server";
+import { extractUniqueFrames } from "../core";
+import { analyseFrames } from "../agent"; 
 import { checkApiKeys } from "../utils/api-keys";
 import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";
 import { createHashBasedOnParams, formatTimestampToSeconds } from "../utils";
+import { printBanner } from "../utils/banner";
 
 export async function defaultCommand(
   videoUrl: string,
   options: DefaultCommandOptions,
 ) {
-  console.log("Starting videostil...\n");
+  printBanner();
 
   const extractOptions = {
     videoUrl,
@@ -47,7 +50,7 @@ export async function defaultCommand(
     console.log(`  ... and ${result.uniqueFrames.length - 5} more frames`);
   }
 
-  const { hasKeys } = checkApiKeys();
+  const { hasKeys, keys } = checkApiKeys();
   if (hasKeys) {
     console.log("\n🤖 Analyzing frames with LLM...\n");
 
@@ -64,11 +67,7 @@ export async function defaultCommand(
         frameBatch,
         systemPrompt: options.systemPrompt,
         initialUserPrompt: options.userPrompt,
-        apiKeys: {
-          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-          GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
-          OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        },
+        apiKeys: keys,
       });
 
       console.log("\n✓ Frame analysis complete!\n");

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { startServer } from "..";
+import { startServer } from "../server";
 import { defaultCommand } from "./default";
 import type { DefaultCommandOptions, ServeCommandOptions } from "./types";
 

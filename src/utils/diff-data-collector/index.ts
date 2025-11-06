@@ -1,17 +1,17 @@
-export type FrameDiffPoint = {
+type FrameDiffPoint = {
   frameIndex: number;
   diffFraction: number;
   timestamp: number;
 };
 
-export type DiffMetadata = {
+type DiffMetadata = {
   totalFrames: number;
   avgDiff: number;
   maxDiff: number;
   minDiff: number;
 };
 
-export type GraphData = {
+type GraphData = {
   points: FrameDiffPoint[];
   metadata: DiffMetadata;
 };

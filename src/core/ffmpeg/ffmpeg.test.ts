@@ -1,25 +1,21 @@
 import * as fs from "fs";
 import path from "path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { FFmpegClient } from "./ffmpeg";
-import { formatTimestampToSeconds } from "../utils";
+import { formatTimestampToSeconds } from "../../utils";
+import { extractUniqueFrames } from "../index";
 
 describe("FFmpegClient", () => {
-  // Using a public test video from the reference test
   const videoUrl =
     "https://assets-test.empirical.run/test-data/settings-Settings-Page-syn-2515f-nfig-and-verify-persistence-chromium-video.webm";
   const outputDir = `ffmpeg-test-${Date.now()}`;
-  let client: FFmpegClient;
 
   beforeAll(() => {
     if (fs.existsSync(outputDir)) {
       fs.rmSync(outputDir, { recursive: true, force: true });
     }
-    client = new FFmpegClient();
   });
 
   afterEach(() => {
-    // Clean up all test directories after each test
     const testDirs = [
       outputDir,
       `${outputDir}-timed`,
@@ -41,7 +37,7 @@ describe("FFmpegClient", () => {
     { timeout: 120000 },
     async () => {
       const startTime = formatTimestampToSeconds("00:00:00");
-      const result = await client.extractUniqueFrames({
+      const result = await extractUniqueFrames({
         videoUrl,
         fps: 30,
         startTime,
@@ -90,7 +86,7 @@ describe("FFmpegClient", () => {
       const startTime = formatTimestampToSeconds("00:00:05");
 
       // Extract from 5 seconds for 10 seconds duration (5s to 15s)
-      const result = await client.extractUniqueFrames({
+      const result = await extractUniqueFrames({
         videoUrl,
         fps: 15,
         threshold: 0.001,
@@ -120,7 +116,7 @@ describe("FFmpegClient", () => {
 
       // Test with startTime beyond video duration - should throw error
       await expect(
-        client.extractUniqueFrames({
+        extractUniqueFrames({
           videoUrl,
           fps: 15,
           threshold: 0.001,
@@ -132,7 +128,7 @@ describe("FFmpegClient", () => {
 
       // Test with zero duration - should throw error
       await expect(
-        client.extractUniqueFrames({
+        extractUniqueFrames({
           videoUrl,
           fps: 15,
           threshold: 0.001,
@@ -150,7 +146,7 @@ describe("FFmpegClient", () => {
     async () => {
       const outputDirShort = `${outputDir}-short`;
 
-      const result = await client.extractUniqueFrames({
+      const result = await extractUniqueFrames({
         videoUrl,
         fps: 10,
         threshold: 0.05,
@@ -165,7 +161,7 @@ describe("FFmpegClient", () => {
   );
 
   it("should create analysis metadata file", { timeout: 120000 }, async () => {
-    const result = await client.extractUniqueFrames({
+    const result = await extractUniqueFrames({
       videoUrl,
       fps: 10,
       threshold: 0.1,

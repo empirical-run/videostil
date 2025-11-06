@@ -1,8 +1,8 @@
-import type { FrameInfo } from "../types/index.js";
-import { ImageLoader } from "./image-loader.js";
-import { compareImageBuffers } from "./image-comparison.js";
-import { updateProgressBar, finishProgressBar } from "./progress-bar.js";
-import { DiffDataCollector } from "./diff-data-collector.js";
+import type { FrameInfo } from "../../types";
+import { ImageLoader } from "../../utils/image-loader";
+import { compareImageBuffers } from "../../utils/image-comparison";
+import { updateProgressBar, finishProgressBar } from "../../utils/progress-bar";
+import { DiffDataCollector } from "../../utils/diff-data-collector";
 
 export async function deduplicateImagesGreedy(
   images: FrameInfo[],

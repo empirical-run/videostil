@@ -1,13 +1,12 @@
-import type { FrameInfo } from "../types/index.js";
+import type { FrameInfo } from "../../types";
 import { promises as fs } from "fs";
 import path from "path";
-import { deduplicateFrames } from "./dedup-core.js";
+import { deduplicateFrames } from ".";
 
 export async function deduplicateImageFiles({
   imagePaths,
   threshold,
   logPrefix = "dedup-image-fs",
-  algo,
   fps,
   frameIndexPadding = 6,
   diffCollector,
@@ -15,7 +14,6 @@ export async function deduplicateImageFiles({
   imagePaths: string[];
   threshold: number;
   logPrefix?: string;
-  algo?: "gd" | "dp" | "sw";
   fps?: number;
   frameIndexPadding?: number;
   diffCollector?: any;
