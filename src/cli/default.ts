@@ -1,8 +1,8 @@
 import path from "node:path";
 import fs from "node:fs";
-import { startServer} from "../server";
+import { startServer } from "../server";
 import { extractUniqueFrames } from "../core";
-import { analyseFrames } from "../agent"; 
+import { analyseFrames } from "../agent";
 import { checkApiKeys } from "../utils/api-keys";
 import type { Attachment } from "../agent/types";
 import type { DefaultCommandOptions } from "./types";

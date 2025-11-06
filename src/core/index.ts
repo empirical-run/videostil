@@ -1,9 +1,13 @@
 import path from "node:path";
-import {promises as fs} from "node:fs";
+import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
 import { ExtractOptions, ExtractResult } from "./ffmpeg/types";
 import { copyFramesToDirectory, downloadOrCopyVideo } from "../utils";
-import { checkFFmpegAvailability, extractFrames, getVideoDuration } from "./ffmpeg";
+import {
+  checkFFmpegAvailability,
+  extractFrames,
+  getVideoDuration,
+} from "./ffmpeg";
 import { DiffDataCollector } from "../utils/diff-data-collector";
 import { deduplicateImageFiles } from "./dedup/dedup-fs";
 

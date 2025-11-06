@@ -223,10 +223,7 @@ export async function copyFramesToDirectory(
       ? frameNumberMatch[1]
       : i.toString().padStart(6, "0");
 
-    const uniqueFramePath = path.join(
-      workingDir,
-      `frame_${frameNumber}.png`,
-    );
+    const uniqueFramePath = path.join(workingDir, `frame_${frameNumber}.png`);
 
     try {
       await fs.promises.copyFile(originalPath, uniqueFramePath);
@@ -238,8 +235,6 @@ export async function copyFramesToDirectory(
     }
   }
 
-  console.log(
-    `Stored ${frames.length} unique frames in: ${workingDir}`,
-  );
+  console.log(`Stored ${frames.length} unique frames in: ${workingDir}`);
   return workingDir;
 }
