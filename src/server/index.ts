@@ -116,6 +116,52 @@ async function findAvailablePort(
   );
 }
 
+function filenameSecurityCheck(filename: string): boolean {
+  return (
+    filename.includes("..") ||
+    filename.includes("/") ||
+    filename.includes("\\") ||
+    !filename.endsWith(".png")
+  );
+}
+
+async function getFramesList(
+  framesDir: string,
+  fps: number,
+  urlPrefix: string,
+): Promise<any[]> {
+  const frameFiles = fs
+    .readdirSync(framesDir)
+    .filter((f) => f.endsWith(".png"))
+    .sort();
+
+  const frameDataPromises = frameFiles.map(async (filename, index) => {
+    if (!filename) return null;
+
+    const frameNumber = filename.match(/frame_(\d+)/)?.[1] || String(index);
+    const framePath = path.join(framesDir, filename);
+
+    try {
+      const stat = await fs.promises.stat(framePath);
+
+      return {
+        index: parseInt(frameNumber),
+        path: filename,
+        fileName: filename,
+        url: `${urlPrefix}/${encodeURIComponent(filename)}`,
+        timestamp: parseInt(frameNumber) / fps,
+        size: stat.size,
+        similarityPercentage: null,
+      };
+    } catch (error) {
+      return null;
+    }
+  });
+
+  const frameDataResults = await Promise.all(frameDataPromises);
+  return frameDataResults.filter((frame) => frame !== null);
+}
+
 export async function startServer(
   options: ServerOptions = {},
 ): Promise<ServerHandle> {
@@ -218,6 +264,48 @@ export async function startServer(
       return;
     }
 
+    // API: Get all frames list
+    if (url.pathname === "/api/all-frames" && req.method === "GET") {
+      if (!workingDir || !currentAnalysisId) {
+        res.statusCode = 404;
+        res.end("No analysis loaded or working directory not found");
+        return;
+      }
+
+      // Get current analysis data
+      const analyses = await discoverAnalysisDirectories(rootPath);
+      const analysis = analyses.find((a) => a.id === currentAnalysisId);
+
+      if (!analysis) {
+        res.statusCode = 404;
+        res.end("Current analysis not found");
+        return;
+      }
+
+      const allFramesDir = path.join(workingDir, "frames");
+      // TODO: remove default from here and use from central place
+      const fps = analysis.data?.params?.fps || 25;
+
+      try {
+        const frameData = await getFramesList(
+          allFramesDir,
+          fps,
+          "/api/all-frame",
+        );
+
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(frameData));
+        return;
+      } catch (error) {
+        res.statusCode = 500;
+        res.end(
+          `Error reading frames directory: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        return;
+      }
+    }
+
     // API: Get unique frames list
     if (url.pathname === "/api/unique-frames" && req.method === "GET") {
       if (!workingDir || !currentAnalysisId) {
@@ -237,40 +325,11 @@ export async function startServer(
       }
 
       const uniqueFramesDir = path.join(workingDir, "unique_frames");
+      // TODO: remove default from here and use from central place
       const fps = analysis.data?.params?.fps || 25;
 
       try {
-        const frameFiles = fs
-          .readdirSync(uniqueFramesDir)
-          .filter((f) => f.endsWith(".png"))
-          .sort();
-
-        const frameDataPromises = frameFiles.map(async (filename, index) => {
-          if (!filename) return null;
-
-          const frameNumber =
-            filename.match(/frame_(\d+)/)?.[1] || String(index);
-          const framePath = path.join(uniqueFramesDir, filename);
-
-          try {
-            const stat = await fs.promises.stat(framePath);
-
-            return {
-              index: parseInt(frameNumber),
-              path: filename,
-              fileName: filename,
-              url: `/api/frame/${encodeURIComponent(filename)}`,
-              timestamp: parseInt(frameNumber) / fps,
-              size: stat.size,
-              similarityPercentage: null,
-            };
-          } catch (error) {
-            return null;
-          }
-        });
-
-        const frameDataResults = await Promise.all(frameDataPromises);
-        const frameData = frameDataResults.filter((frame) => frame !== null);
+        const frameData = await getFramesList(uniqueFramesDir, fps, "/api/frame");
 
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
@@ -298,18 +357,13 @@ export async function startServer(
       );
 
       // Security checks
-      if (
-        filename.includes("..") ||
-        filename.includes("/") ||
-        filename.includes("\\") ||
-        !filename.endsWith(".png")
-      ) {
+      if (filenameSecurityCheck(filename)) {
         res.statusCode = 400;
         res.end("Invalid filename");
         return;
       }
 
-      const uniqueFramesDir = path.join(workingDir, "unique_frames");
+      const uniqueFramesDir = path.join(workingDir, "frames");
       const framePath = path.join(uniqueFramesDir, filename);
 
       try {
@@ -345,14 +399,8 @@ export async function startServer(
 
       // Security checks
       if (
-        frame1.includes("..") ||
-        frame1.includes("/") ||
-        frame1.includes("\\") ||
-        frame2.includes("..") ||
-        frame2.includes("/") ||
-        frame2.includes("\\") ||
-        !frame1.endsWith(".png") ||
-        !frame2.endsWith(".png")
+        filenameSecurityCheck(frame1) ||
+        filenameSecurityCheck(frame2)
       ) {
         res.statusCode = 400;
         res.end("Invalid filename");

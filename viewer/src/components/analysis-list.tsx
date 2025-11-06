@@ -33,7 +33,6 @@ export default function AnalysisList({
           )}`;
 
           const params = analysis.params || {};
-          const algo = params.algo || "gd";
           const fps = params.fps || "N/A";
           const threshold = params.threshold || "N/A";
 
@@ -63,7 +62,7 @@ export default function AnalysisList({
                 {displayUrl}
               </div>
               <div className="text-[8px] text-gray-600 leading-tight">
-                {analysis.unique_frames_count} Unique frames • algo: {algo}
+                {analysis.unique_frames_count} Unique frames
               </div>
               <div className="text-[8px] text-gray-600 leading-tight">
                 fps: {fps} • threshold: {threshold}

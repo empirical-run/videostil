@@ -15,7 +15,13 @@ export function formatSecondsToTimestamp(seconds: number | undefined): string {
 
 export function formatTimestampToSeconds(timestamp: string): number {
   try {
-    const parts = timestamp.split(":").map((value) => parseFloat(value));
+    const parts = timestamp.split(":").map((value) => {
+      const num = parseFloat(value);
+      if (isNaN(num)) {
+        throw new Error(`Invalid numeric value in timestamp: "${value}"`);
+      }
+      return num;
+    });
 
     if (parts.length === 1) {
       // Just seconds: "30" or "30.5"
