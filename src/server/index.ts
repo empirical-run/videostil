@@ -125,6 +125,43 @@ function filenameSecurityCheck(filename: string): boolean {
   );
 }
 
+async function getFramesList(
+  framesDir: string,
+  fps: number,
+  urlPrefix: string,
+): Promise<any[]> {
+  const frameFiles = fs
+    .readdirSync(framesDir)
+    .filter((f) => f.endsWith(".png"))
+    .sort();
+
+  const frameDataPromises = frameFiles.map(async (filename, index) => {
+    if (!filename) return null;
+
+    const frameNumber = filename.match(/frame_(\d+)/)?.[1] || String(index);
+    const framePath = path.join(framesDir, filename);
+
+    try {
+      const stat = await fs.promises.stat(framePath);
+
+      return {
+        index: parseInt(frameNumber),
+        path: filename,
+        fileName: filename,
+        url: `${urlPrefix}/${encodeURIComponent(filename)}`,
+        timestamp: parseInt(frameNumber) / fps,
+        size: stat.size,
+        similarityPercentage: null,
+      };
+    } catch (error) {
+      return null;
+    }
+  });
+
+  const frameDataResults = await Promise.all(frameDataPromises);
+  return frameDataResults.filter((frame) => frame !== null);
+}
+
 export async function startServer(
   options: ServerOptions = {},
 ): Promise<ServerHandle> {
@@ -246,40 +283,15 @@ export async function startServer(
       }
 
       const allFramesDir = path.join(workingDir, "frames");
+      // TODO: remove default from here and use from central place
       const fps = analysis.data?.params?.fps || 25;
 
       try {
-        const frameFiles = fs
-          .readdirSync(allFramesDir)
-          .filter((f) => f.endsWith(".png"))
-          .sort();
-
-        const frameDataPromises = frameFiles.map(async (filename, index) => {
-          if (!filename) return null;
-
-          const frameNumber =
-            filename.match(/frame_(\d+)/)?.[1] || String(index);
-          const framePath = path.join(allFramesDir, filename);
-
-          try {
-            const stat = await fs.promises.stat(framePath);
-
-            return {
-              index: parseInt(frameNumber),
-              path: filename,
-              fileName: filename,
-              url: `/api/all-frame/${encodeURIComponent(filename)}`,
-              timestamp: parseInt(frameNumber) / fps,
-              size: stat.size,
-              similarityPercentage: null,
-            };
-          } catch (error) {
-            return null;
-          }
-        });
-
-        const frameDataResults = await Promise.all(frameDataPromises);
-        const frameData = frameDataResults.filter((frame) => frame !== null);
+        const frameData = await getFramesList(
+          allFramesDir,
+          fps,
+          "/api/all-frame",
+        );
 
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
@@ -313,40 +325,11 @@ export async function startServer(
       }
 
       const uniqueFramesDir = path.join(workingDir, "unique_frames");
+      // TODO: remove default from here and use from central place
       const fps = analysis.data?.params?.fps || 25;
 
       try {
-        const frameFiles = fs
-          .readdirSync(uniqueFramesDir)
-          .filter((f) => f.endsWith(".png"))
-          .sort();
-
-        const frameDataPromises = frameFiles.map(async (filename, index) => {
-          if (!filename) return null;
-
-          const frameNumber =
-            filename.match(/frame_(\d+)/)?.[1] || String(index);
-          const framePath = path.join(uniqueFramesDir, filename);
-
-          try {
-            const stat = await fs.promises.stat(framePath);
-
-            return {
-              index: parseInt(frameNumber),
-              path: filename,
-              fileName: filename,
-              url: `/api/frame/${encodeURIComponent(filename)}`,
-              timestamp: parseInt(frameNumber) / fps,
-              size: stat.size,
-              similarityPercentage: null,
-            };
-          } catch (error) {
-            return null;
-          }
-        });
-
-        const frameDataResults = await Promise.all(frameDataPromises);
-        const frameData = frameDataResults.filter((frame) => frame !== null);
+        const frameData = await getFramesList(uniqueFramesDir, fps, "/api/frame");
 
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
