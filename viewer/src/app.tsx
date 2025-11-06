@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { AnalysisData, AnalysisInfo } from "./types";
-import { fetchAnalyses, fetchAnalysisData, fetchUniqueFrames } from "./lib/api";
+import type { AnalysisData, AnalysisInfo, Frame } from "./types";
+import { fetchAnalyses, fetchAnalysisData, fetchUniqueFrames, fetchAllFrames } from "./lib/api";
 import AnalysisList from "./components/analysis-list";
 import FramesGrid from "./components/frames-grid";
 import ResultsPanel from "./components/results-panel";
@@ -23,6 +23,8 @@ function App() {
   const [allFramesDiff, setAllFramesDiff] = useState<Map<number, number>>(
     new Map(),
   );
+  const [activeTab, setActiveTab] = useState<'unique' | 'all'>('unique');
+  const [allFrames, setAllFrames] = useState<Frame[]>([]);
 
   // Load analyses on mount and check URL for analysis ID
   useEffect(() => {
@@ -93,6 +95,16 @@ function App() {
         // Use frames from analysis data
       }
 
+      // Try to get all frames
+      try {
+        const allFramesData = await fetchAllFrames();
+        if (allFramesData && allFramesData.length > 0) {
+          setAllFrames(allFramesData);
+        }
+      } catch {
+        console.log('All frames not available');
+      }
+
       setAnalysisData(data);
     } catch (error) {
       console.error("Error loading analysis:", error);
@@ -119,35 +131,61 @@ function App() {
 
       {/* Middle Panel - Frames */}
       <div className="flex-1 bg-white border border-gray-300 flex flex-col min-w-0">
-        <div className="bg-[#2c3e50] text-white px-2 py-1 text-[10px] font-bold uppercase border-b border-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
-          <span className="hidden lg:inline">
-            Total Unique Frames: {analysisData?.unique_frames?.length || 0} |
-            Size:{" "}
-            {analysisData?.unique_frames
-              ? (
-                  analysisData.unique_frames.reduce(
-                    (sum, f) => sum + (f.size || 0),
-                    0,
-                  ) /
-                  (1024 * 1024)
-                ).toFixed(2)
-              : 0}{" "}
-            MB | Max 100 frames or 32 MB of payload is allowed whichever is
-            smaller (LLM LIMIT)
-          </span>
-          <span className="lg:hidden">
-            Frames: {analysisData?.unique_frames?.length || 0} |{" "}
-            {analysisData?.unique_frames
-              ? (
-                  analysisData.unique_frames.reduce(
-                    (sum, f) => sum + (f.size || 0),
-                    0,
-                  ) /
-                  (1024 * 1024)
-                ).toFixed(2)
-              : 0}{" "}
-            MB
-          </span>
+        <div className="bg-[#2c3e50] text-white px-2 py-2 border-b border-gray-300">
+          <div className="flex justify-between items-center gap-3">
+            <div className="whitespace-nowrap overflow-hidden text-ellipsis text-[10px] font-bold uppercase">
+              <span className="hidden lg:inline">
+                Total {activeTab === 'unique' ? 'Unique' : 'All'} Frames: {activeTab === 'unique' ? (analysisData?.unique_frames?.length || 0) : allFrames.length} |
+                Size:{" "}
+                {activeTab === 'unique' && analysisData?.unique_frames
+                  ? (
+                      analysisData.unique_frames.reduce(
+                        (sum, f) => sum + (f.size || 0),
+                        0,
+                      ) /
+                      (1024 * 1024)
+                    ).toFixed(2)
+                  : activeTab === 'all' && allFrames.length > 0
+                  ? (
+                      allFrames.reduce(
+                        (sum, f) => sum + (f.size || 0),
+                        0,
+                      ) /
+                      (1024 * 1024)
+                    ).toFixed(2)
+                  : 0}{" "}
+                MB {activeTab === 'unique' && '| Max 100 frames or 32 MB (LLM LIMIT)'}
+              </span>
+              <span className="lg:hidden">
+                Frames: {activeTab === 'unique' ? (analysisData?.unique_frames?.length || 0) : allFrames.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-[9px] text-gray-300 uppercase font-semibold">View:</span>
+              <div className="flex gap-1 bg-white/10 p-0.5 rounded">
+                <button
+                  onClick={() => setActiveTab('unique')}
+                  className={`px-3 py-1.5 rounded text-[10px] font-bold transition-all ${
+                    activeTab === 'unique'
+                      ? 'bg-white text-[#2c3e50] shadow-md'
+                      : 'bg-transparent text-white hover:bg-white/20'
+                  }`}
+                >
+                  Unique
+                </button>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-3 py-1.5 rounded text-[10px] font-bold transition-all ${
+                    activeTab === 'all'
+                      ? 'bg-white text-[#2c3e50] shadow-md'
+                      : 'bg-transparent text-white hover:bg-white/20'
+                  }`}
+                >
+                  All
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {analysisData && currentAnalysisId && !loading && (
@@ -158,13 +196,14 @@ function App() {
         )}
 
         <FramesGrid
-          frames={analysisData?.unique_frames || []}
+          frames={activeTab === 'unique' ? (analysisData?.unique_frames || []) : allFrames}
           loading={loading}
           onFrameClick={(index, similarities, allFramesDiff) => {
             setSelectedFrameIndex(index);
             setFrameSimilarities(similarities);
             setAllFramesDiff(allFramesDiff);
           }}
+          activeTab={activeTab}
         />
       </div>
 
@@ -177,13 +216,14 @@ function App() {
       </div>
 
       {/* Frame Modal */}
-      {selectedFrameIndex !== null && analysisData?.unique_frames && (
+      {selectedFrameIndex !== null && (activeTab === 'unique' ? analysisData?.unique_frames : allFrames) && (
         <FrameModal
-          frames={analysisData.unique_frames}
+          frames={activeTab === 'unique' ? (analysisData?.unique_frames || []) : allFrames}
           initialIndex={selectedFrameIndex}
           similarities={frameSimilarities}
           allFramesDiff={allFramesDiff}
           onClose={() => setSelectedFrameIndex(null)}
+          activeTab={activeTab}
         />
       )}
     </div>

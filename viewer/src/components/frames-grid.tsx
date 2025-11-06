@@ -11,12 +11,14 @@ interface FramesGridProps {
     similarities: Map<number, number>,
     allFramesDiff: Map<number, number>,
   ) => void;
+  activeTab?: 'unique' | 'all';
 }
 
 export default function FramesGrid({
   frames,
   loading,
   onFrameClick,
+  activeTab = 'unique',
 }: FramesGridProps) {
   const [similarities, setSimilarities] = useState<Map<number, number>>(
     new Map(),
@@ -124,13 +126,15 @@ export default function FramesGrid({
                   {formatSecondsToTimestamp(parseFloat(frame.timestamp)) ||
                     "N/A"}
                 </div>
-                <div className="text-purple-600 text-[7px]">
-                  D-Uniq: {diffUniqueText}
-                </div>
+                {activeTab === 'unique' && (
+                  <div className="text-purple-600 text-[7px]">
+                    D-Uniq: {diffUniqueText}
+                  </div>
+                )}
                 <div className="text-blue-600 text-[7px]">
                   D-Video: {diffVideoText}
                 </div>
-                {frameGap > 1 && (
+                {activeTab === 'unique' && frameGap > 1 && (
                   <div className="text-orange-600 text-[7px]">
                     Gap: +{frameGap - 1}
                   </div>

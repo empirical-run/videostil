@@ -218,6 +218,77 @@ export async function startServer(
       return;
     }
 
+    // API: Get all frames list
+    if (url.pathname === "/api/all-frames" && req.method === "GET") {
+      if (!workingDir || !currentAnalysisId) {
+        res.statusCode = 404;
+        res.end("No analysis loaded or working directory not found");
+        return;
+      }
+
+      // Get current analysis data
+      const analyses = await discoverAnalysisDirectories(rootPath);
+      const analysis = analyses.find((a) => a.id === currentAnalysisId);
+
+      if (!analysis) {
+        res.statusCode = 404;
+        res.end("Current analysis not found");
+        return;
+      }
+
+      const allFramesDir = path.join(workingDir, "frames");
+      const fps = analysis.data?.params?.fps || 25;
+
+      try {
+        const frameFiles = fs
+          .readdirSync(allFramesDir)
+          .filter((f) => f.endsWith(".png"))
+          .sort();
+
+        const frameDataPromises = frameFiles.map(async (filename, index) => {
+          if (!filename) return null;
+
+          const frameNumber =
+            filename.match(/frame_(\d+)/)?.[1] || String(index);
+          const framePath = path.join(allFramesDir, filename);
+
+          try {
+            const stat = await fs.promises.stat(framePath);
+
+            return {
+              index: parseInt(frameNumber),
+              path: filename,
+              fileName: filename,
+              url: `/api/all-frame/${encodeURIComponent(filename)}`,
+              timestamp: `${Math.floor(parseInt(frameNumber) / fps / 60)}:${Math.floor(
+                (parseInt(frameNumber) / fps) % 60,
+              )
+                .toString()
+                .padStart(2, "0")}`,
+              size: stat.size,
+              similarityPercentage: null,
+            };
+          } catch (error) {
+            return null;
+          }
+        });
+
+        const frameDataResults = await Promise.all(frameDataPromises);
+        const frameData = frameDataResults.filter((frame) => frame !== null);
+
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(frameData));
+        return;
+      } catch (error) {
+        res.statusCode = 500;
+        res.end(
+          `Error reading frames directory: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        return;
+      }
+    }
+
     // API: Get unique frames list
     if (url.pathname === "/api/unique-frames" && req.method === "GET") {
       if (!workingDir || !currentAnalysisId) {
@@ -285,7 +356,48 @@ export async function startServer(
       }
     }
 
-    // API: Serve individual frame
+    // API: Serve individual all frame
+    if (url.pathname.startsWith("/api/all-frame/") && req.method === "GET") {
+      if (!workingDir) {
+        res.statusCode = 404;
+        res.end("Working directory not found");
+        return;
+      }
+
+      const filename = decodeURIComponent(
+        url.pathname.substring("/api/all-frame/".length),
+      );
+
+      // Security checks
+      if (
+        filename.includes("..") ||
+        filename.includes("/") ||
+        filename.includes("\\") ||
+        !filename.endsWith(".png")
+      ) {
+        res.statusCode = 400;
+        res.end("Invalid filename");
+        return;
+      }
+
+      const allFramesDir = path.join(workingDir, "frames");
+      const framePath = path.join(allFramesDir, filename);
+
+      try {
+        const imageBuffer = await fs.promises.readFile(framePath);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "image/png");
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        res.end(imageBuffer);
+        return;
+      } catch (error) {
+        res.statusCode = 404;
+        res.end("Frame not found");
+        return;
+      }
+    }
+
+    // API: Serve individual unique frame
     if (url.pathname.startsWith("/api/frame/") && req.method === "GET") {
       if (!workingDir) {
         res.statusCode = 404;

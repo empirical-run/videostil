@@ -1,13 +1,16 @@
 export const VIDEO_ANALYSIS = {
   // Model limits - Claude
+   // https://docs.claude.com/en/docs/build-with-claude/vision#dive-deeper-into-vision
   CLAUDE_MAX_IMAGES_PER_BATCH: 100,
   CLAUDE_MAX_REQUEST_SIZE_MB: 32,
 
   // Model limits - OpenAI
+   // https://platform.openai.com/docs/guides/images-vision?api-mode=responses
   OPENAI_MAX_IMAGES_PER_BATCH: 500,
   OPENAI_MAX_REQUEST_SIZE_MB: 50,
 
   // Model limits - Gemini
+  // https://ai.google.dev/gemini-api/docs/image-understanding?authuser=1#image-input
   GEMINI_MAX_IMAGES_PER_BATCH: 50,
   GEMINI_MAX_REQUEST_SIZE_MB: 20,
 
