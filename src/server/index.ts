@@ -116,6 +116,15 @@ async function findAvailablePort(
   );
 }
 
+function filenameSecurityCheck(filename: string): boolean {
+  return (
+    filename.includes("..") ||
+    filename.includes("/") ||
+    filename.includes("\\") ||
+    !filename.endsWith(".png")
+  );
+}
+
 export async function startServer(
   options: ServerOptions = {},
 ): Promise<ServerHandle> {
@@ -352,48 +361,7 @@ export async function startServer(
       }
     }
 
-    // API: Serve individual all frame
-    if (url.pathname.startsWith("/api/all-frame/") && req.method === "GET") {
-      if (!workingDir) {
-        res.statusCode = 404;
-        res.end("Working directory not found");
-        return;
-      }
-
-      const filename = decodeURIComponent(
-        url.pathname.substring("/api/all-frame/".length),
-      );
-
-      // Security checks
-      if (
-        filename.includes("..") ||
-        filename.includes("/") ||
-        filename.includes("\\") ||
-        !filename.endsWith(".png")
-      ) {
-        res.statusCode = 400;
-        res.end("Invalid filename");
-        return;
-      }
-
-      const allFramesDir = path.join(workingDir, "frames");
-      const framePath = path.join(allFramesDir, filename);
-
-      try {
-        const imageBuffer = await fs.promises.readFile(framePath);
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "image/png");
-        res.setHeader("Cache-Control", "public, max-age=3600");
-        res.end(imageBuffer);
-        return;
-      } catch (error) {
-        res.statusCode = 404;
-        res.end("Frame not found");
-        return;
-      }
-    }
-
-    // API: Serve individual unique frame
+    // API: Serve individual frame
     if (url.pathname.startsWith("/api/frame/") && req.method === "GET") {
       if (!workingDir) {
         res.statusCode = 404;
@@ -406,18 +374,13 @@ export async function startServer(
       );
 
       // Security checks
-      if (
-        filename.includes("..") ||
-        filename.includes("/") ||
-        filename.includes("\\") ||
-        !filename.endsWith(".png")
-      ) {
+      if (filenameSecurityCheck(filename)) {
         res.statusCode = 400;
         res.end("Invalid filename");
         return;
       }
 
-      const uniqueFramesDir = path.join(workingDir, "unique_frames");
+      const uniqueFramesDir = path.join(workingDir, "frames");
       const framePath = path.join(uniqueFramesDir, filename);
 
       try {
@@ -453,14 +416,8 @@ export async function startServer(
 
       // Security checks
       if (
-        frame1.includes("..") ||
-        frame1.includes("/") ||
-        frame1.includes("\\") ||
-        frame2.includes("..") ||
-        frame2.includes("/") ||
-        frame2.includes("\\") ||
-        !frame1.endsWith(".png") ||
-        !frame2.endsWith(".png")
+        filenameSecurityCheck(frame1) ||
+        filenameSecurityCheck(frame2)
       ) {
         res.statusCode = 400;
         res.end("Invalid filename");
