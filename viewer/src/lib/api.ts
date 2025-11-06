@@ -24,6 +24,14 @@ export async function fetchUniqueFrames(): Promise<Frame[]> {
   return response.json();
 }
 
+export async function fetchAllFrames(): Promise<Frame[]> {
+  const response = await fetch("/api/all-frames");
+  if (!response.ok) {
+    throw new Error("Failed to fetch all frames");
+  }
+  return response.json();
+}
+
 export async function fetchSimilarity(
   frame1: string,
   frame2: string,

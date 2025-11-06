@@ -32,9 +32,12 @@ export interface AnalysisData {
     algo?: string;
     fps?: number;
     threshold?: number;
+    startTime?: number;
+    duration?: number;
   };
   unique_frames: Frame[];
   videoDurationSeconds?: number;
+  totalFramesCount?: number;
   interleaved_tool_result?: string | unknown[];
 }
 

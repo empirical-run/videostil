@@ -8,6 +8,7 @@ interface FrameModalProps {
   similarities: Map<number, number>;
   allFramesDiff: Map<number, number>;
   onClose: () => void;
+  activeTab?: 'unique' | 'all';
 }
 
 export default function FrameModal({
@@ -16,6 +17,7 @@ export default function FrameModal({
   similarities,
   allFramesDiff,
   onClose,
+  activeTab,
 }: FrameModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [dimensions, setDimensions] = useState<string>("Loading...");
@@ -120,7 +122,7 @@ export default function FrameModal({
         <div className="text-[13px] mb-1.5 text-white">
           Frame {currentIndex + 1} of {frames.length}
         </div>
-        <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-[10px] text-gray-200">
+        <div className={`grid ${activeTab === 'all' ? 'grid-cols-2' : 'grid-cols-3'} gap-x-4 gap-y-2 text-[10px] text-gray-200`}>
           <div className="text-left">
             <span className="text-gray-400">T:</span>{" "}
             <span className="text-white">
@@ -128,15 +130,17 @@ export default function FrameModal({
                 "N/A"}
             </span>
           </div>
-          <div className="text-left">
-            <span className="text-purple-400">D-Uniq:</span>{" "}
-            <span className="text-purple-300">{similarityPercentage}</span>
-          </div>
+          {activeTab === 'unique' && (
+            <div className="text-left">
+              <span className="text-purple-400">D-Uniq:</span>{" "}
+              <span className="text-purple-300">{similarityPercentage}</span>
+            </div>
+          )}
           <div className="text-left">
             <span className="text-blue-400">D-Video:</span>{" "}
             <span className="text-blue-300">{videoDiffPercentage}</span>
           </div>
-          {frameGap > 1 && (
+          {activeTab === 'unique' && frameGap > 1 && (
             <div className="text-left col-span-3">
               <span className="text-orange-400">Gap:</span>{" "}
               <span className="text-orange-300">
@@ -149,11 +153,11 @@ export default function FrameModal({
             <span className="text-gray-400">Size:</span>{" "}
             <span className="text-white">{frameSize} KB</span>
           </div>
-          <div className="text-left col-span-2">
+          <div className={`text-left ${activeTab === 'all' ? 'col-span-2' : 'col-span-2'}`}>
             <span className="text-gray-400">Dimensions:</span>{" "}
             <span className="text-white">{dimensions}</span>
           </div>
-          <div className="text-left col-span-3">
+          <div className={`text-left ${activeTab === 'all' ? 'col-span-2' : 'col-span-3'}`}>
             <span className="text-gray-400">File:</span>{" "}
             <span className="text-white text-[9px]">
               {currentFrame.fileName}
