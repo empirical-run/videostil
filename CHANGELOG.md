@@ -1,5 +1,11 @@
 # videostil
 
+## 0.3.2
+
+### Patch Changes
+
+- 5f9cb75: feat: show all frames in analysis viewer ui
+
 ## 0.3.1
 
 ### Patch Changes
